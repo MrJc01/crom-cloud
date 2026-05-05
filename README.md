@@ -3,7 +3,7 @@
 > **Plataforma SaaS** que expõe ferramentas e serviços diversos através de uma **API única e centralizada**.
 > Inspirado no modelo do [OpenRouter](https://openrouter.ai), mas aplicado a **qualquer tipo de ferramenta/serviço**.
 >
-> **Status:** ✅ MVP Completo — 315/315 itens do checklist | 23/23 testes E2E | 24 testes unitários Go
+> **Status:** ✅ MVP Completo — 315/315 checklist | 25/25 E2E | 24 unit tests Go
 
 ---
 
@@ -69,7 +69,7 @@ curl http://localhost:8080/v1/echo/ping \
 
 ```bash
 make test       # Testes unitários Go (auth, gateway, server, vault)
-make test-e2e   # 23 testes E2E via curl (requer servidor rodando)
+make test-e2e   # 25 testes E2E via curl (requer servidor rodando)
 make test-all   # Todos os testes
 ```
 
@@ -121,7 +121,7 @@ crom-cloud/
 │   └── template-multilang/# Go bridge + Python/Node/Bash
 ├── web/                   # Fonte do frontend (copiado para core/web/ no build)
 ├── tests/                 # Testes
-│   ├── e2e_curl_test.sh   # 23 testes E2E via curl
+│   ├── e2e_curl_test.sh   # 25 testes E2E via curl
 │   ├── core/              # Testes unitários
 │   └── e2e/               # Testes E2E (Go)
 ├── tools/                 # Scripts de automação
@@ -162,7 +162,7 @@ crom-cloud/
 | `make build-all` | Compila Core + todos os plugins |
 | `make sync-web` | Sincroniza `web/` → `core/web/` para embed |
 | `make test` | Testes unitários Go (24 testes) |
-| `make test-e2e` | 23 testes E2E via curl (servidor deve estar rodando) |
+| `make test-e2e` | 25 testes E2E via curl (servidor deve estar rodando) |
 | `make test-all` | Todos os testes |
 | `make docker-up` | Sobe PostgreSQL + Redis |
 | `make docker-down` | Para os containers |
@@ -202,4 +202,14 @@ O `Dockerfile` e `docker-compose.yml` são compatíveis com ambos:
 
 ## 📜 Licença
 
-Projeto privado — CROM Ecosystem.
+**Crom Sustainable Use License v1.0** — [LICENSE.md](LICENSE.md)
+
+- ✅ Uso pessoal e educacional
+- ✅ Uso comercial interno (sua empresa/infra)
+- ✅ Projetos para clientes (onde o software não é o produto principal)
+- ✅ Modificar e criar forks privados
+- ❌ Revender ou redistribuir como produto sem permissão
+- ❌ Criar produto concorrente
+- ⚠️ Atribuição obrigatória: `Powered by Crom Cloud — © CROM Ecosystem`
+
+Para licenciamento comercial: **license@crom.dev**
