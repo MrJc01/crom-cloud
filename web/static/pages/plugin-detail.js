@@ -119,6 +119,8 @@ Router.register('/plugins/:slug', async (app, params) => {
 
       const routesHtml = (plugin.routes || []).map(r => {
         const id = r.path.replace(/\W/g, '-');
+        const defaultPayload = r.documentation?.request_body ? JSON.stringify(r.documentation.request_body, null, 2) : '{"exemplo": "dado"}';
+        
         return `
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:20px;margin-bottom:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -130,11 +132,31 @@ Router.register('/plugins/:slug', async (app, params) => {
           </div>
           <p style="color:#94a3b8;font-size:14px;margin-bottom:20px;">${UI.esc(r.description || 'Nenhuma descrição fornecida.')}</p>
           
+          ${r.documentation ? `
+            <div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:8px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.03);">
+              <p style="color:#e2e8f0;font-size:13px;line-height:1.5;margin-bottom:16px;">${UI.esc(r.documentation.summary)}</p>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                ${r.documentation.request_body ? `
+                <div>
+                  <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Payload (Exemplo)</span>
+                  <pre style="background:#0f172a;padding:12px;border-radius:6px;font-size:12px;color:#38bdf8;margin-top:4px;border:1px solid rgba(255,255,255,0.05);white-space:pre-wrap;">${JSON.stringify(r.documentation.request_body, null, 2)}</pre>
+                </div>` : '<div></div>'}
+                
+                ${r.documentation.response_example ? `
+                <div>
+                  <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Resposta (Exemplo)</span>
+                  <pre style="background:#0f172a;padding:12px;border-radius:6px;font-size:12px;color:#22c55e;margin-top:4px;border:1px solid rgba(255,255,255,0.05);white-space:pre-wrap;">${JSON.stringify(r.documentation.response_example, null, 2)}</pre>
+                </div>` : ''}
+              </div>
+            </div>
+          ` : ''}
+
           <div style="background:#0f172a;border-radius:8px;padding:16px;border:1px solid rgba(255,255,255,0.05);">
             <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:12px;text-transform:uppercase;">Playground de Teste</div>
             <form onsubmit="window.testPluginEndpoint(event, '${r.method}', '${r.path}')" style="display:flex;flex-direction:column;gap:12px;">
               ${r.method !== 'GET' ? `
-                <textarea name="payload" rows="3" placeholder='{"exemplo": "dado"}' style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:12px;color:white;font-family:monospace;font-size:13px;resize:vertical;"></textarea>
+                <textarea name="payload" rows="4" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:12px;color:white;font-family:monospace;font-size:13px;resize:vertical;">${defaultPayload}</textarea>
               ` : ''}
               <div>
                 ${UI.btn(`${I('play', 'w-4 h-4')} Executar Call`, 'primary')}
@@ -180,11 +202,32 @@ Router.register('/plugins/:slug', async (app, params) => {
           <div style="display:grid;grid-template-columns:300px 1fr;gap:48px;">
             <div>
               <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:12px;">Sobre esta API</h3>
-              <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px;">Esta API é executada no gateway seguro do Crom Cloud. Ao habilitá-la, você permite que suas API Keys (Tokens) com escopo adequado possam realizar requisições para os endpoints listados.</p>
+              <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px;">${plugin.documentation?.overview ? UI.esc(plugin.documentation.overview) : 'Esta API é executada no gateway seguro do Crom Cloud. Ao habilitá-la, você permite que suas API Keys (Tokens) com escopo adequado possam realizar requisições para os endpoints listados.'}</p>
               
+              ${plugin.documentation?.use_cases && plugin.documentation.use_cases.length > 0 ? `
+              <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:12px;">Casos de Uso</h3>
+              <ul style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px;padding-left:20px;">
+                ${plugin.documentation.use_cases.map(uc => `<li>${UI.esc(uc)}</li>`).join('')}
+              </ul>
+              ` : ''}
+
+              ${plugin.documentation?.getting_started ? `
+              <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:12px;">Como Começar</h3>
+              <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px;">${UI.esc(plugin.documentation.getting_started)}</p>
+              ` : ''}
+
               <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:12px;">Autenticação</h3>
-              <p style="color:#94a3b8;font-size:14px;line-height:1.6;">Todas as chamadas (exceto as realizadas pelo Playground nesta página) devem incluir o Header:</p>
+              <p style="color:#94a3b8;font-size:14px;line-height:1.6;">Todas as chamadas devem incluir o Header:</p>
               <pre style="background:#0f172a;padding:12px;border-radius:8px;font-size:12px;color:#a78bfa;margin-top:8px;border:1px solid rgba(255,255,255,0.05);">Authorization: Bearer crom_sk_...</pre>
+
+              ${isAuth && isEnabled ? `
+              <div style="margin-top:24px;">
+                <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:12px;">Secrets Necessários</h3>
+                <div id="plugin-secrets-status" style="font-size:13px;color:#64748b;">Carregando...</div>
+              </div>
+              
+              <div style="margin-top:24px;" id="create-key-cta"></div>
+              ` : ''}
             </div>
 
             <div>
@@ -197,6 +240,55 @@ Router.register('/plugins/:slug', async (app, params) => {
       `;
 
       app.innerHTML = wrap(content);
+
+      // Post-render: verificar secrets e keys (apenas se logado e habilitado)
+      if (isAuth && isEnabled) {
+        // Secrets status
+        try {
+          const secretsRes = await API.listSecrets();
+          const mySecrets = (secretsRes.data || []).filter(s => s.plugin_slug === slug);
+          const reqSecrets = plugin.required_secrets || [];
+          const statusEl = document.getElementById('plugin-secrets-status');
+          if (statusEl) {
+            if (reqSecrets.length > 0) {
+              statusEl.innerHTML = reqSecrets.map(s => {
+                const found = mySecrets.some(ms => ms.secret_name === s.key);
+                return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+                  <span style="color:${found ? '#22c55e' : '#ef4444'};">${found ? I('check','w-4 h-4') : I('x','w-4 h-4')}</span>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#e2e8f0;font-weight:600;">${UI.esc(s.key)}</span>
+                    <span style="font-size:11px;color:#64748b;">${UI.esc(s.label)}</span>
+                  </div>
+                  ${!found ? `<a style="color:#818cf8;font-size:11px;cursor:pointer;margin-left:auto;font-weight:600;padding:4px 8px;background:rgba(99,102,241,0.1);border-radius:4px;" onclick="Router.navigate('/secrets')">Configurar</a>` : ''}
+                </div>`;
+              }).join('');
+            } else {
+              if (mySecrets.length > 0) {
+                statusEl.innerHTML = mySecrets.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+                  <span style="color:#22c55e;">${I('check','w-4 h-4')}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#94a3b8;">${UI.esc(s.secret_name)}</span>
+                </div>`).join('');
+              } else {
+                statusEl.innerHTML = '<p style="color:#64748b;font-size:13px;">Este plugin não exige secrets obrigatórios, mas você pode configurá-los em <a style="color:#818cf8;cursor:pointer;" onclick="Router.navigate(\'/secrets\')">Secrets</a> se necessário.</p>';
+              }
+            }
+          }
+        } catch(e) {}
+
+        // Key CTA
+        try {
+          const keysRes = await API.listKeys();
+          const hasKey = (keysRes.data || []).some(k => k.is_active && (k.permissions || []).some(p => p.plugin_slug === slug || p.plugin_slug === '*'));
+          const ctaEl = document.getElementById('create-key-cta');
+          if (ctaEl && !hasKey) {
+            ctaEl.innerHTML = `
+              <div style="padding:16px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:12px;">
+                <p style="font-size:13px;color:#94a3b8;margin-bottom:12px;">Você ainda não tem uma API Key com acesso a este plugin.</p>
+                <button onclick="Router.navigate('/keys')" style="width:100%;padding:10px;background:linear-gradient(135deg,#6366f1,#7c3aed);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:Inter,sans-serif;">${I('key','w-4 h-4')} Criar API Key para ${UI.esc(plugin.name)}</button>
+              </div>`;
+          }
+        } catch(e) {}
+      }
     } catch (err) {
       toast(err.message, 'error');
     }

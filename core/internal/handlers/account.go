@@ -183,3 +183,35 @@ func (h *AccountHandler) ListEnabledPlugins(w http.ResponseWriter, r *http.Reque
 		"enabled_plugins": slugs,
 	})
 }
+
+// UpdateProfile atualiza o nome e email do desenvolvedor autenticado.
+func (h *AccountHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	var req struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_JSON", "JSON inválido")
+		return
+	}
+
+	if req.Name == "" || req.Email == "" {
+		server.WriteError(w, http.StatusBadRequest, "MISSING_FIELDS", "name e email são obrigatórios")
+		return
+	}
+
+	dev, err := h.DevStore.UpdateProfile(r.Context(), authCtx.DeveloperID, req.Name, req.Email)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "UPDATE_ERROR", err.Error())
+		return
+	}
+
+	server.WriteSuccess(w, dev)
+}

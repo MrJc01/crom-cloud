@@ -1,9 +1,9 @@
 {
   "slug": "cloudflare-r2",
   "name": "Cloudflare R2 Storage",
-  "version": "0.1.0",
-  "description": "Plugin Cloudflare R2 Storage para Crom Cloud",
-  "icon": "🔧",
+  "version": "1.0.0",
+  "description": "Armazenamento de objetos compatível com S3 (zero custo de egress). Faça upload, download e liste arquivos.",
+  "icon": "hard-drive",
   "status": "active",
   "runtime": {
     "binary": "cloudflare-r2",
@@ -12,22 +12,81 @@
   },
   "billing": {
     "model": "per_call",
-    "credit_cost": 1,
+    "credit_cost": 2,
     "premium_actions": {}
   },
-  "required_secrets": [],
-  "api_routes": [
+  "required_secrets": [
     {
-      "method": "GET",
-      "path": "/ping",
-      "description": "Health check simples",
-      "scope": "read"
+      "key": "CF_R2_ACCOUNT_ID",
+      "label": "Cloudflare Account ID",
+      "required": true
     },
     {
+      "key": "CF_R2_ACCESS_KEY_ID",
+      "label": "Access Key ID (S3)",
+      "required": true
+    },
+    {
+      "key": "CF_R2_SECRET_ACCESS_KEY",
+      "label": "Secret Access Key (S3)",
+      "required": true
+    },
+    {
+      "key": "CF_R2_BUCKET_NAME",
+      "label": "Nome do Bucket R2",
+      "required": true
+    }
+  ],
+  "documentation": {
+    "overview": "O plugin Cloudflare R2 permite operações de Storage de Objetos diretamente da API do Crom Cloud. O R2 possui uma API compatível com S3 e destaca-se por não cobrar taxa de transferência de saída (zero egress fee).",
+    "use_cases": [
+      "Upload seguro de avatares ou documentos dos usuários",
+      "Geração de URLs pré-assinadas (Presigned URLs)",
+      "Listagem e gerenciamento de arquivos em backends web"
+    ],
+    "getting_started": "Crie um bucket R2 no dashboard da Cloudflare, gere as credenciais da API S3 e adicione-as aos Secrets do Workspace junto com o Account ID e nome do bucket."
+  },
+  "api_routes": [
+    {
       "method": "POST",
-      "path": "/execute",
-      "description": "Ação principal do plugin",
-      "scope": "write"
+      "path": "/presign-upload",
+      "description": "Gera URL pré-assinada para upload",
+      "scope": "write",
+      "documentation": {
+        "summary": "Retorna uma URL temporária que o frontend pode usar para fazer upload direto do arquivo para o bucket R2 sem passar pelo seu backend.",
+        "request_body": {
+          "file_key": "user-uploads/avatar.png",
+          "content_type": "image/png",
+          "expires_in_seconds": 3600
+        },
+        "response_example": {
+          "upload_url": "https://<account_id>.r2.cloudflarestorage.com/meu-bucket/user-uploads/avatar.png?X-Amz-Algorithm=...",
+          "file_key": "user-uploads/avatar.png"
+        },
+        "errors": [
+          {"code": 400, "message": "file_key e content_type são obrigatórios"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/objects",
+      "description": "Lista objetos no bucket",
+      "scope": "read",
+      "documentation": {
+        "summary": "Lista arquivos no bucket com suporte opcional a paginação e prefixos (pastas).",
+        "request_body": null,
+        "response_example": {
+          "objects": [
+            {
+              "key": "user-uploads/avatar.png",
+              "size": 102450,
+              "last_modified": "2026-05-05T00:00:00Z"
+            }
+          ]
+        },
+        "errors": []
+      }
     }
   ]
 }

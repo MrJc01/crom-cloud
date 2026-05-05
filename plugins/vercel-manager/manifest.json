@@ -1,9 +1,9 @@
 {
   "slug": "vercel-manager",
   "name": "Vercel Manager",
-  "version": "0.1.0",
-  "description": "Plugin Vercel Manager para Crom Cloud",
-  "icon": "🔧",
+  "version": "1.0.0",
+  "description": "Gerenciamento programático de deploys e projetos na plataforma Vercel.",
+  "icon": "triangle",
   "status": "active",
   "runtime": {
     "binary": "vercel-manager",
@@ -12,22 +12,73 @@
   },
   "billing": {
     "model": "per_call",
-    "credit_cost": 1,
+    "credit_cost": 2,
     "premium_actions": {}
   },
-  "required_secrets": [],
-  "api_routes": [
+  "required_secrets": [
     {
-      "method": "GET",
-      "path": "/ping",
-      "description": "Health check simples",
-      "scope": "read"
+      "key": "VERCEL_API_TOKEN",
+      "label": "Vercel API Token",
+      "required": true
     },
     {
+      "key": "VERCEL_PROJECT_ID",
+      "label": "Vercel Project ID",
+      "required": true
+    }
+  ],
+  "documentation": {
+    "overview": "O plugin Vercel Manager fornece uma interface simplificada para criar deploys programáticos e gerenciar variáveis de ambiente em projetos na Vercel.",
+    "use_cases": [
+      "Criar botões de 'Deploy Now' no seu próprio dashboard",
+      "Injetar variáveis de ambiente dinâmicas via API",
+      "Sincronizar domínios em um SaaS multitenant"
+    ],
+    "getting_started": "Gere um token de API na sua conta da Vercel e adicione o ID do projeto que deseja controlar."
+  },
+  "api_routes": [
+    {
       "method": "POST",
-      "path": "/execute",
-      "description": "Ação principal do plugin",
-      "scope": "write"
+      "path": "/deployments",
+      "description": "Cria um novo deploy",
+      "scope": "write",
+      "documentation": {
+        "summary": "Aciona um novo deploy na Vercel usando o código mais recente do repositório vinculado ao projeto.",
+        "request_body": {
+          "target": "production",
+          "name": "meu-projeto"
+        },
+        "response_example": {
+          "id": "dpl_abc123",
+          "url": "meu-projeto-123.vercel.app",
+          "ready_state": "BUILDING"
+        },
+        "errors": [
+          {"code": 403, "message": "Permissão negada (Token inválido)"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/deployments",
+      "description": "Lista deploys recentes",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna uma lista paginada dos últimos deploys realizados no projeto.",
+        "request_body": null,
+        "response_example": {
+          "deployments": [
+            {
+              "uid": "dpl_abc123",
+              "name": "meu-projeto",
+              "url": "meu-projeto-123.vercel.app",
+              "state": "READY",
+              "created_at": 1610000000
+            }
+          ]
+        },
+        "errors": []
+      }
     }
   ]
 }

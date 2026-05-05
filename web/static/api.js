@@ -58,10 +58,12 @@ const API = {
   register(email, name, password) { return this.request('POST', '/account/register', { email, name, password }); },
   login(email, password) { return this.request('POST', '/account/login', { email, password }); },
   me() { return this.request('GET', '/account/me', null, { cacheKey: 'me', cacheTTL: 60000 }); },
+  updateProfile(name, email) { this._cache = {}; return this.request('PUT', '/account/me', { name, email }); },
 
   // Keys
   createKey(label, permissions) { this._cache = {}; return this.request('POST', '/account/keys', { label, permissions }); },
   listKeys() { return this.request('GET', '/account/keys', null, { cacheKey: 'keys', cacheTTL: 30000 }); },
+  updateKey(id, permissions, label) { this._cache = {}; return this.request('PUT', `/account/keys/${id}`, { permissions, label }); },
   revokeKey(id) { this._cache = {}; return this.request('DELETE', `/account/keys/${id}`); },
 
   // Billing

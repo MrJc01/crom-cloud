@@ -2,13 +2,12 @@
   "slug": "echo",
   "name": "Echo Test Plugin",
   "version": "1.0.0",
-  "description": "Plugin de teste que ecoa requisições de volta. Usado para validar que o pipeline Core → Plugin funciona.",
+  "description": "Plugin de teste que ecoa requisições de volta. Usado para validar que o pipeline Core → Plugin funciona corretamente. Ideal para testar autenticação, permissões e billing sem custos.",
   "icon": "zap",
-  "status": "disabled",
+  "status": "active",
   "runtime": {
     "binary": "./echo",
     "language": "go",
-    "script_entry": "",
     "health_check_interval": "30s"
   },
   "billing": {
@@ -17,24 +16,64 @@
     "premium_actions": {}
   },
   "required_secrets": [],
+  "documentation": {
+    "overview": "O Echo Plugin é uma ferramenta de diagnóstico integrada ao Crom Cloud. Ele permite validar que o pipeline completo (autenticação → billing → dispatch → plugin → resposta) está funcionando sem depender de serviços externos.",
+    "use_cases": [
+      "Testar se sua API Key está configurada corretamente",
+      "Verificar se os secrets estão sendo injetados no plugin",
+      "Validar o fluxo de créditos (este plugin é gratuito)"
+    ],
+    "getting_started": "Não requer configuração. Basta ter uma API Key com escopo 'echo' e fazer a primeira chamada."
+  },
   "api_routes": [
     {
       "method": "GET",
       "path": "/ping",
-      "description": "Retorna pong",
-      "scope": "read"
+      "description": "Health check — retorna pong",
+      "scope": "read",
+      "documentation": {
+        "summary": "Verifica se o plugin está respondendo. Retorna um 'pong' simples.",
+        "request_body": null,
+        "response_example": {
+          "message": "pong",
+          "developer_id": "uuid-123",
+          "action": "ping"
+        },
+        "errors": []
+      }
     },
     {
       "method": "POST",
       "path": "/reflect",
       "description": "Ecoa o payload recebido",
-      "scope": "write"
+      "scope": "write",
+      "documentation": {
+        "summary": "Recebe qualquer JSON e retorna o mesmo payload de volta. Útil para testar payloads de requisição.",
+        "request_body": {
+          "any_field": "qualquer valor",
+          "nested": {"key": "value"}
+        },
+        "response_example": {
+          "echo": {"any_field": "qualquer valor", "nested": {"key": "value"}},
+          "developer_id": "uuid-123"
+        },
+        "errors": []
+      }
     },
     {
       "method": "GET",
       "path": "/check-secrets",
-      "description": "Lista secrets injetados",
-      "scope": "read"
+      "description": "Lista secrets injetados (só nomes)",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna os nomes dos secrets que foram injetados neste plugin para o developer autenticado. Nunca retorna os valores.",
+        "request_body": null,
+        "response_example": {
+          "secrets_available": ["API_TOKEN", "WEBHOOK_URL"],
+          "count": 2
+        },
+        "errors": []
+      }
     }
   ]
 }

@@ -9,16 +9,24 @@ import (
 
 // PluginManifest representa o manifest.json de um plugin.
 type PluginManifest struct {
-	Slug        string          `json:"slug"`
-	Name        string          `json:"name"`
-	Version     string          `json:"version"`
-	Description string          `json:"description"`
-	Icon        string          `json:"icon"`
-	Status      string          `json:"status"`
-	Runtime     RuntimeConfig   `json:"runtime"`
-	Billing     BillingConfig   `json:"billing"`
-	RequiredSecrets []SecretSpec `json:"required_secrets"`
-	APIRoutes   []RouteSpec     `json:"api_routes"`
+	Slug            string          `json:"slug"`
+	Name            string          `json:"name"`
+	Version         string          `json:"version"`
+	Description     string          `json:"description"`
+	Icon            string          `json:"icon"`
+	Status          string          `json:"status"`
+	Runtime         RuntimeConfig   `json:"runtime"`
+	Billing         BillingConfig   `json:"billing"`
+	RequiredSecrets []SecretSpec    `json:"required_secrets"`
+	Documentation   PluginDoc       `json:"documentation"`
+	APIRoutes       []RouteSpec     `json:"api_routes"`
+}
+
+// PluginDoc define a documentação detalhada do plugin.
+type PluginDoc struct {
+	Overview       string   `json:"overview"`
+	UseCases       []string `json:"use_cases"`
+	GettingStarted string   `json:"getting_started"`
 }
 
 // RuntimeConfig define como o plugin é executado.
@@ -45,10 +53,25 @@ type SecretSpec struct {
 
 // RouteSpec define uma rota exposta pelo plugin.
 type RouteSpec struct {
-	Method      string `json:"method"`
-	Path        string `json:"path"`
-	Description string `json:"description"`
-	Scope       string `json:"scope"`
+	Method        string   `json:"method"`
+	Path          string   `json:"path"`
+	Description   string   `json:"description"`
+	Scope         string   `json:"scope"`
+	Documentation RouteDoc `json:"documentation"`
+}
+
+// RouteDoc define a documentação detalhada de um endpoint.
+type RouteDoc struct {
+	Summary         string       `json:"summary"`
+	RequestBody     interface{}  `json:"request_body"`
+	ResponseExample interface{}  `json:"response_example"`
+	Errors          []RouteError `json:"errors"`
+}
+
+// RouteError define um erro retornado pelo endpoint.
+type RouteError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 // LoadManifest carrega e parseia um manifest.json.

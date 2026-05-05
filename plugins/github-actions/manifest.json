@@ -1,9 +1,9 @@
 {
   "slug": "github-actions",
   "name": "GitHub Actions",
-  "version": "0.1.0",
-  "description": "Plugin GitHub Actions para Crom Cloud",
-  "icon": "🔧",
+  "version": "1.0.0",
+  "description": "Acione workflows (Actions) no GitHub programaticamente e consulte status de execuções.",
+  "icon": "github",
   "status": "active",
   "runtime": {
     "binary": "github-actions",
@@ -12,22 +12,81 @@
   },
   "billing": {
     "model": "per_call",
-    "credit_cost": 1,
+    "credit_cost": 2,
     "premium_actions": {}
   },
-  "required_secrets": [],
-  "api_routes": [
+  "required_secrets": [
     {
-      "method": "GET",
-      "path": "/ping",
-      "description": "Health check simples",
-      "scope": "read"
+      "key": "GITHUB_PAT",
+      "label": "Personal Access Token",
+      "required": true
     },
     {
+      "key": "GITHUB_OWNER",
+      "label": "Dono do Repositório (User/Org)",
+      "required": true
+    },
+    {
+      "key": "GITHUB_REPO",
+      "label": "Nome do Repositório",
+      "required": true
+    }
+  ],
+  "documentation": {
+    "overview": "O plugin GitHub Actions permite acionar workflows de dispatch de forma segura. É ideal para pipelines onde o frontend ou outros serviços da sua plataforma precisem disparar automações sem ter acesso direto aos tokens do GitHub.",
+    "use_cases": [
+      "Criar botões no dashboard que trigam deploys ou rotinas de CI",
+      "Integração de Webhooks externos para workflows customizados",
+      "Consultar status do último build"
+    ],
+    "getting_started": "Crie um Fine-grained Personal Access Token no GitHub com permissão de Actions (Read/Write) para o repositório desejado e cadastre as chaves na página de Secrets."
+  },
+  "api_routes": [
+    {
       "method": "POST",
-      "path": "/execute",
-      "description": "Ação principal do plugin",
-      "scope": "write"
+      "path": "/workflows/:workflow_id/dispatches",
+      "description": "Aciona um Workflow Dispatch",
+      "scope": "write",
+      "documentation": {
+        "summary": "Dispara manualmente um workflow de GitHub Action usando o evento `workflow_dispatch`.",
+        "request_body": {
+          "ref": "main",
+          "inputs": {
+            "environment": "production",
+            "debug_mode": "false"
+          }
+        },
+        "response_example": {
+          "success": true,
+          "message": "Workflow disparado com sucesso"
+        },
+        "errors": [
+          {"code": 404, "message": "Workflow ID não encontrado"},
+          {"code": 422, "message": "Parâmetros de input inválidos para o workflow"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/runs",
+      "description": "Lista execuções recentes",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna uma lista paginada das execuções de actions do repositório.",
+        "request_body": null,
+        "response_example": {
+          "total_count": 1,
+          "workflow_runs": [
+            {
+              "id": 12345678,
+              "name": "CI Build",
+              "status": "completed",
+              "conclusion": "success"
+            }
+          ]
+        },
+        "errors": []
+      }
     }
   ]
 }

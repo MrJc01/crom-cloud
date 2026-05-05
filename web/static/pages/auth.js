@@ -28,6 +28,7 @@ Router.register('/login', async (app) => {
           <button type="submit" id="loginBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#7c3aed);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 8px 25px rgba(99,102,241,0.35);display:flex;align-items:center;justify-content:center;gap:8px;font-family:Inter,sans-serif;" onmouseover="this.style.boxShadow='0 12px 35px rgba(99,102,241,0.5)'" onmouseout="this.style.boxShadow='0 8px 25px rgba(99,102,241,0.35)'">Entrar</button>
         </form>
         <p style="text-align:center;margin-top:24px;font-size:14px;color:#64748b;">Não tem conta? <a style="color:#818cf8;font-weight:600;cursor:pointer;" onclick="Router.navigate('/register')">Criar conta</a></p>
+        <p style="text-align:center;margin-top:8px;font-size:13px;"><a style="color:#64748b;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='#818cf8'" onmouseout="this.style.color='#64748b'" onclick="toast('Funcionalidade disponível em breve', 'info')">Esqueci minha senha</a></p>
       </div>
     </div>
   </div>`;
@@ -68,7 +69,11 @@ Router.register('/register', async (app) => {
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#94a3b8;">Senha</label>
-            <input type="password" id="regPassword" required minlength="6" placeholder="Mínimo 6 caracteres" style="width:100%;padding:12px 16px;background:#0f1520;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:14px;color:#e2e8f0;outline:none;transition:all 0.2s;font-family:Inter,sans-serif;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.boxShadow=''">
+            <input type="password" id="regPassword" required minlength="6" placeholder="Mínimo 6 caracteres" style="width:100%;padding:12px 16px;background:#0f1520;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:14px;color:#e2e8f0;outline:none;transition:all 0.2s;font-family:Inter,sans-serif;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.boxShadow=''" oninput="(function(v){const s=document.getElementById('pw-strength');const b=document.getElementById('pw-bar');let score=0;if(v.length>=6)score++;if(v.length>=10)score++;if(/[A-Z]/.test(v))score++;if(/[0-9]/.test(v))score++;if(/[^a-zA-Z0-9]/.test(v))score++;const colors=['#ef4444','#f59e0b','#f59e0b','#22c55e','#22c55e'];const labels=['Muito fraca','Fraca','Razoável','Forte','Muito forte'];b.style.width=(score/5*100)+'%';b.style.background=colors[Math.max(0,score-1)]||'#64748b';s.textContent=v.length>0?labels[Math.max(0,score-1)]||'':'';s.style.color=colors[Math.max(0,score-1)]||'#64748b';})(this.value)">
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div id="pw-bar" style="height:100%;width:0%;transition:all 0.3s;border-radius:2px;"></div></div>
+              <span id="pw-strength" style="font-size:11px;font-weight:600;min-width:80px;text-align:right;"></span>
+            </div>
           </div>
           <button type="submit" id="regBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#7c3aed);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 8px 25px rgba(99,102,241,0.35);display:flex;align-items:center;justify-content:center;gap:8px;font-family:Inter,sans-serif;">${I('rocket','w-4 h-4')} Criar Conta</button>
         </form>

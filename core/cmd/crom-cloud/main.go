@@ -181,6 +181,7 @@ func main() {
 	router.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(cfg.JWTSecret))
 		r.Get("/v1/account/me", accountHandler.Me)
+		r.Put("/v1/account/me", accountHandler.UpdateProfile)
 		r.Post("/v1/account/keys", keysHandler.Create)
 		r.Get("/v1/account/keys", keysHandler.List)
 		r.Put("/v1/account/keys/{id}", keysHandler.Update)

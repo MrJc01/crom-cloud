@@ -149,3 +149,19 @@ func (s *DeveloperStore) ListEnabledPlugins(ctx context.Context, devID uuid.UUID
 	}
 	return slugs, rows.Err()
 }
+
+// UpdateProfile atualiza o nome e email do desenvolvedor.
+func (s *DeveloperStore) UpdateProfile(ctx context.Context, devID uuid.UUID, name, email string) (*Developer, error) {
+	dev := &Developer{}
+	err := s.DB.QueryRow(ctx,
+		`UPDATE developers SET name = $1, email = $2, updated_at = NOW()
+		 WHERE id = $3
+		 RETURNING id, email, name, credit_balance, plan, is_active, created_at, updated_at`,
+		name, email, devID,
+	).Scan(&dev.ID, &dev.Email, &dev.Name, &dev.CreditBalance, &dev.Plan, &dev.IsActive, &dev.CreatedAt, &dev.UpdatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao atualizar perfil: %w", err)
+	}
+	return dev, nil
+}

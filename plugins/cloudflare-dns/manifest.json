@@ -1,9 +1,9 @@
 {
   "slug": "cloudflare-dns",
   "name": "Cloudflare DNS",
-  "version": "0.1.0",
-  "description": "Plugin Cloudflare DNS para Crom Cloud",
-  "icon": "🔧",
+  "version": "1.0.0",
+  "description": "Gerenciamento programático de registros DNS na Cloudflare. Permite criar, atualizar e listar registros para os domínios da sua conta.",
+  "icon": "globe",
   "status": "active",
   "runtime": {
     "binary": "cloudflare-dns",
@@ -12,22 +12,72 @@
   },
   "billing": {
     "model": "per_call",
-    "credit_cost": 1,
+    "credit_cost": 2,
     "premium_actions": {}
   },
-  "required_secrets": [],
+  "required_secrets": [
+    {
+      "key": "CLOUDFLARE_API_TOKEN",
+      "label": "Cloudflare API Token",
+      "required": true
+    },
+    {
+      "key": "CLOUDFLARE_ZONE_ID",
+      "label": "Zone ID do Domínio",
+      "required": true
+    }
+  ],
+  "documentation": {
+    "overview": "O plugin Cloudflare DNS atua como uma interface unificada para a API da Cloudflare, permitindo o gerenciamento de registros DNS de forma simplificada e segura sem expor suas credenciais reais no código cliente.",
+    "use_cases": [
+      "Automação de subdomínios para plataformas SaaS",
+      "Atualização de IPs dinâmicos (DDNS)",
+      "Verificação de propriedade de domínio via TXT"
+    ],
+    "getting_started": "Para começar, crie um token de API na Cloudflare com permissão de edição de DNS e adicione o Zone ID do domínio que deseja gerenciar nos Secrets do seu Workspace."
+  },
   "api_routes": [
     {
       "method": "GET",
-      "path": "/ping",
-      "description": "Health check simples",
-      "scope": "read"
+      "path": "/records",
+      "description": "Lista registros DNS",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna uma lista paginada de todos os registros DNS do Zone configurado.",
+        "request_body": null,
+        "response_example": {
+          "records": [
+            {"id": "abc123_", "type": "A", "name": "api.exemplo.com", "content": "192.168.1.1", "proxied": true}
+          ]
+        },
+        "errors": [
+          {"code": 401, "message": "API Token inválido ou faltando"},
+          {"code": 404, "message": "Zone ID não encontrado"}
+        ]
+      }
     },
     {
       "method": "POST",
-      "path": "/execute",
-      "description": "Ação principal do plugin",
-      "scope": "write"
+      "path": "/records",
+      "description": "Cria um registro DNS",
+      "scope": "write",
+      "documentation": {
+        "summary": "Cria um novo registro DNS (A, CNAME, TXT, etc) na Cloudflare.",
+        "request_body": {
+          "type": "A",
+          "name": "novo.exemplo.com",
+          "content": "10.0.0.1",
+          "proxied": true,
+          "ttl": 3600
+        },
+        "response_example": {
+          "success": true,
+          "record_id": "def456_"
+        },
+        "errors": [
+          {"code": 400, "message": "Payload inválido ou faltando campos"}
+        ]
+      }
     }
   ]
 }

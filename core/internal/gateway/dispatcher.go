@@ -323,23 +323,31 @@ func (d *Dispatcher) HandleListPlugins(w http.ResponseWriter, r *http.Request) {
 	manifests := d.Manager.ListPlugins()
 
 	type PluginInfo struct {
-		Slug       string      `json:"slug"`
-		Name       string      `json:"name"`
-		Version    string      `json:"version"`
-		Status     string      `json:"status"`
-		CreditCost int         `json:"credit_cost"`
-		Routes     []RouteSpec `json:"routes"`
+		Slug            string       `json:"slug"`
+		Name            string       `json:"name"`
+		Version         string       `json:"version"`
+		Description     string       `json:"description"`
+		Icon            string       `json:"icon"`
+		Status          string       `json:"status"`
+		CreditCost      int          `json:"credit_cost"`
+		RequiredSecrets []SecretSpec `json:"required_secrets"`
+		Documentation   PluginDoc    `json:"documentation"`
+		Routes          []RouteSpec  `json:"routes"`
 	}
 
 	var list []PluginInfo
 	for _, m := range manifests {
 		list = append(list, PluginInfo{
-			Slug:       m.Slug,
-			Name:       m.Name,
-			Version:    m.Version,
-			Status:     m.Status,
-			CreditCost: m.Billing.CreditCost,
-			Routes:     m.APIRoutes,
+			Slug:            m.Slug,
+			Name:            m.Name,
+			Version:         m.Version,
+			Description:     m.Description,
+			Icon:            m.Icon,
+			Status:          m.Status,
+			CreditCost:      m.Billing.CreditCost,
+			RequiredSecrets: m.RequiredSecrets,
+			Documentation:   m.Documentation,
+			Routes:          m.APIRoutes,
 		})
 	}
 

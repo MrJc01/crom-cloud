@@ -1,9 +1,9 @@
 {
   "slug": "supabase-admin",
   "name": "Supabase Admin",
-  "version": "0.1.0",
-  "description": "Plugin Supabase Admin para Crom Cloud",
-  "icon": "🔧",
+  "version": "1.0.0",
+  "description": "Acesso administrativo a projetos Supabase. Gerencie banco de dados, usuários de Auth e Storage ignorando RLS.",
+  "icon": "database",
   "status": "active",
   "runtime": {
     "binary": "supabase-admin",
@@ -12,22 +12,66 @@
   },
   "billing": {
     "model": "per_call",
-    "credit_cost": 1,
+    "credit_cost": 3,
     "premium_actions": {}
   },
-  "required_secrets": [],
-  "api_routes": [
+  "required_secrets": [
     {
-      "method": "GET",
-      "path": "/ping",
-      "description": "Health check simples",
-      "scope": "read"
+      "key": "SUPABASE_URL",
+      "label": "Supabase Project URL",
+      "required": true
     },
     {
+      "key": "SUPABASE_SERVICE_ROLE_KEY",
+      "label": "Service Role Key (Admin)",
+      "required": true
+    }
+  ],
+  "documentation": {
+    "overview": "O plugin Supabase Admin fornece acesso privilegiado (bypassing Row Level Security) à sua instância do Supabase. Ele foi desenhado para ser usado por backends e webhooks para operações críticas.",
+    "use_cases": [
+      "Deletar usuários do Supabase Auth e cascatear dados",
+      "Sincronização de faturamento",
+      "Tarefas de manutenção de banco de dados"
+    ],
+    "getting_started": "Adicione a URL do seu projeto e a Service Role Key aos seus Secrets. Atenção: Nunca exponha a API Key deste plugin publicamente no frontend."
+  },
+  "api_routes": [
+    {
       "method": "POST",
-      "path": "/execute",
-      "description": "Ação principal do plugin",
-      "scope": "write"
+      "path": "/auth/users",
+      "description": "Cria usuário no Supabase Auth",
+      "scope": "write",
+      "documentation": {
+        "summary": "Cria um usuário diretamente no Supabase Auth com permissões de admin, sem precisar de verificação por email.",
+        "request_body": {
+          "email": "user@exemplo.com",
+          "password": "senha_segura",
+          "email_confirm": true
+        },
+        "response_example": {
+          "id": "uuid-do-user",
+          "created_at": "2026-05-05T00:00:00Z"
+        },
+        "errors": [
+          {"code": 409, "message": "Email já registrado"}
+        ]
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/auth/users/:id",
+      "description": "Deleta usuário do Auth",
+      "scope": "write",
+      "documentation": {
+        "summary": "Remove um usuário do Supabase Auth permanentemente.",
+        "request_body": null,
+        "response_example": {
+          "success": true,
+          "deleted_id": "uuid-do-user"
+        },
+        "errors": []
+      }
     }
   ]
 }

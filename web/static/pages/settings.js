@@ -67,7 +67,11 @@ const settingsPage = {
     const name = document.getElementById('settings-name')?.value;
     const email = document.getElementById('settings-email')?.value;
     if (!name || !email) return toast('Preencha todos os campos', 'error');
-    toast('Alterações salvas!');
+    try {
+      const res = await API.updateProfile(name, email);
+      API.user = res.data;
+      toast('Perfil atualizado com sucesso!');
+    } catch (err) { toast(err.message, 'error'); }
   },
   deleteAccount() {
     const modal = UI.confirm('Excluir Conta', 'ATENÇÃO: Esta ação é permanente. Todos os dados, keys e secrets serão apagados.');
