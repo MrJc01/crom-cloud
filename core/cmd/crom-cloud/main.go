@@ -206,6 +206,8 @@ func main() {
 		adminDispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor, pluginStore, accountHandler.DevStore)
 		r.Post("/v1/system/reload", adminDispatcher.HandleReload)
 		r.Post("/v1/system/plugins/{slug}/toggle", adminDispatcher.HandleTogglePlugin)
+		r.HandleFunc("/v1/playground/{slug}/*", adminDispatcher.HandlePluginRequest)
+		r.HandleFunc("/v1/playground/{slug}", adminDispatcher.HandlePluginRequest)
 	})
 
 	// === API (API Key auth) — acessa plugins com billing + secrets ===

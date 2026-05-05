@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	pb "github.com/crom/crom-cloud/core/proto"
 )
@@ -44,12 +45,48 @@ func (h *Handler) ExecuteAction(ctx context.Context, req *pb.ActionRequest) (*pb
 		return h.handlePing(req)
 	case "execute":
 		return h.handleExecute(req)
+	case "auth/users":
+		return h.handleAuthUsers(req)
 	default:
+		// Verificar se é rota parametrizada /auth/users/:id
+		if strings.HasPrefix(req.Action, "auth/users/") {
+			return h.handleAuthUsersDelete(req)
+		}
+
 		return &pb.ActionResponse{
 			StatusCode:   404,
 			ErrorMessage: fmt.Sprintf("Ação '%s' não encontrada", req.Action),
 		}, nil
 	}
+}
+
+// handleAuthUsers simula a criação de um usuário
+func (h *Handler) handleAuthUsers(req *pb.ActionRequest) (*pb.ActionResponse, error) {
+	result := map[string]interface{}{
+		"created_at": "2026-05-05T00:00:00Z",
+		"id":         "uuid-mock-1234-5678",
+	}
+	data, _ := json.Marshal(result)
+	return &pb.ActionResponse{
+		StatusCode: 200,
+		Data:       data,
+	}, nil
+}
+
+// handleAuthUsersDelete simula a deleção de um usuário
+func (h *Handler) handleAuthUsersDelete(req *pb.ActionRequest) (*pb.ActionResponse, error) {
+	parts := strings.Split(req.Action, "/")
+	id := parts[len(parts)-1]
+	
+	result := map[string]interface{}{
+		"deleted_id": id,
+		"success":    true,
+	}
+	data, _ := json.Marshal(result)
+	return &pb.ActionResponse{
+		StatusCode: 200,
+		Data:       data,
+	}, nil
 }
 
 // handlePing retorna um pong simples.

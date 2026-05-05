@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/crom/crom-cloud/core/internal/models"
 	"github.com/crom/crom-cloud/core/internal/server"
 )
 
@@ -40,6 +41,9 @@ func JWTMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 
 			authCtx := &AuthContext{
 				DeveloperID: devID,
+				Permissions: []models.KeyPermission{
+					{PluginSlug: "*", Scope: "admin"}, // Permissão curinga para o dashboard/playground
+				},
 			}
 
 			ctx := context.WithValue(r.Context(), authContextKey, authCtx)

@@ -106,7 +106,8 @@ Router.register('/plugins/:slug', async (app, params) => {
 
           // Como o usuário não tem a key inteira salva no DB (só o hash/prefix), no web playground o ideal é que o gateway suporte o JWT para testes (com DeveloperID).
           // Para contornar e validar o Gateway via código, vamos usar o token JWT e ajustar o Gateway.
-          const res = await API[method.toLowerCase()](apiUrl.replace('/v1',''), payload);
+          const playgroundUrl = apiUrl.replace('/v1', '/v1/playground');
+          const res = await API.request(method, playgroundUrl.replace('/v1',''), payload);
           
           resultEl.innerHTML = `<pre style="margin:0;color:#22c55e;font-size:12px;white-space:pre-wrap;word-wrap:break-word;">${JSON.stringify(res, null, 2)}</pre>`;
         } catch (err) {

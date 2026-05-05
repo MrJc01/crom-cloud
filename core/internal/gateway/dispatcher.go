@@ -63,8 +63,7 @@ func (d *Dispatcher) HandlePluginRequest(w http.ResponseWriter, r *http.Request)
 
 	// Extrair slug e action do path
 	slug := chi.URLParam(r, "slug")
-	action := strings.TrimPrefix(r.URL.Path, "/v1/"+slug)
-	action = strings.TrimPrefix(action, "/")
+	action := chi.URLParam(r, "*")
 	if action == "" {
 		action = "index"
 	}
