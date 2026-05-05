@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "description": "Plugin de teste que ecoa requisições de volta. Usado para validar que o pipeline Core → Plugin funciona.",
   "icon": "zap",
-  "status": "active",
+  "status": "disabled",
   "runtime": {
     "binary": "./echo",
     "language": "go",
+    "script_entry": "",
     "health_check_interval": "30s"
   },
   "billing": {
@@ -17,8 +18,23 @@
   },
   "required_secrets": [],
   "api_routes": [
-    {"method": "GET", "path": "/ping", "description": "Retorna pong", "scope": "read"},
-    {"method": "POST", "path": "/reflect", "description": "Ecoa o payload recebido", "scope": "write"},
-    {"method": "GET", "path": "/check-secrets", "description": "Lista secrets injetados", "scope": "read"}
+    {
+      "method": "GET",
+      "path": "/ping",
+      "description": "Retorna pong",
+      "scope": "read"
+    },
+    {
+      "method": "POST",
+      "path": "/reflect",
+      "description": "Ecoa o payload recebido",
+      "scope": "write"
+    },
+    {
+      "method": "GET",
+      "path": "/check-secrets",
+      "description": "Lista secrets injetados",
+      "scope": "read"
+    }
   ]
 }

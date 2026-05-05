@@ -177,6 +177,49 @@ func (s *APIKeyStore) Revoke(ctx context.Context, keyID, devID uuid.UUID) error 
 	return nil
 }
 
+// UpdateKey atualiza o rótulo e as permissões de uma API Key.
+func (s *APIKeyStore) UpdateKey(ctx context.Context, keyID, devID uuid.UUID, label string, permissions []KeyPermission) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("erro ao iniciar transação: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Atualizar label se foi fornecido
+	if label != "" {
+		tag, err := tx.Exec(ctx, `UPDATE api_keys SET label = $1 WHERE id = $2 AND developer_id = $3`, label, keyID, devID)
+		if err != nil {
+			return fmt.Errorf("erro ao atualizar label: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("key não encontrada ou não pertence ao desenvolvedor")
+		}
+	}
+
+	// Limpar permissões antigas
+	_, err = tx.Exec(ctx, `DELETE FROM key_permissions WHERE api_key_id = $1`, keyID)
+	if err != nil {
+		return fmt.Errorf("erro ao deletar permissões antigas: %w", err)
+	}
+
+	// Inserir novas permissões
+	for _, perm := range permissions {
+		_, err := tx.Exec(ctx,
+			`INSERT INTO key_permissions (api_key_id, plugin_slug, scope) VALUES ($1, $2, $3)`,
+			keyID, perm.PluginSlug, perm.Scope,
+		)
+		if err != nil {
+			return fmt.Errorf("erro ao inserir nova permissão: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("erro ao commitar edição: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateLastUsed atualiza o timestamp de último uso.
 func (s *APIKeyStore) UpdateLastUsed(ctx context.Context, keyID uuid.UUID) {
 	s.DB.Exec(ctx, `UPDATE api_keys SET last_used_at = NOW() WHERE id = $1`, keyID)

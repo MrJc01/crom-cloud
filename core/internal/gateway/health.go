@@ -118,7 +118,7 @@ func (hm *HealthMonitor) checkAll() {
 
 	for _, manifest := range plugins {
 		plugin, ok := hm.manager.GetPlugin(manifest.Slug)
-		if !ok {
+		if !ok || plugin.Service == nil {
 			continue
 		}
 

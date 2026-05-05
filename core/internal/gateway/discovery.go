@@ -53,6 +53,17 @@ func (pm *PluginManager) Discover() error {
 	}
 
 	for _, m := range manifests {
+		if m.Status == "disabled" {
+			// Apenas armazena no map para o ListPlugins, mas sem cliente ativo
+			pm.mu.Lock()
+			pm.plugins[m.Slug] = &PluginInstance{
+				Manifest: m,
+			}
+			pm.mu.Unlock()
+			slog.Info("plugin inativo registrado", "slug", m.Slug)
+			continue
+		}
+
 		if err := pm.loadPlugin(m); err != nil {
 			slog.Error("falha ao iniciar plugin", "slug", m.Slug, "error", err)
 			continue
@@ -148,8 +159,10 @@ func (pm *PluginManager) Shutdown() {
 	defer pm.mu.Unlock()
 
 	for slug, p := range pm.plugins {
-		p.Client.Kill()
-		slog.Info("plugin encerrado", "slug", slug)
+		if p.Client != nil {
+			p.Client.Kill()
+			slog.Info("plugin encerrado", "slug", slug)
+		}
 	}
 	pm.plugins = make(map[string]*PluginInstance)
 }

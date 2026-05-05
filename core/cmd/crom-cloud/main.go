@@ -21,6 +21,7 @@ import (
 	"github.com/crom/crom-cloud/core/internal/config"
 	"github.com/crom/crom-cloud/core/internal/gateway"
 	"github.com/crom/crom-cloud/core/internal/handlers"
+	"github.com/crom/crom-cloud/core/internal/models"
 	"github.com/crom/crom-cloud/core/internal/server"
 	"github.com/crom/crom-cloud/core/internal/vault"
 	"github.com/crom/crom-cloud/core/web"
@@ -119,6 +120,24 @@ func main() {
 	}
 	defer pluginManager.Shutdown()
 
+	pluginStore := &models.PluginStore{DB: pool}
+
+	// Auto-registrar plugins descobertos no banco de dados
+	for _, m := range pluginManager.ListPlugins() {
+		p := &models.Plugin{
+			Slug:              m.Slug,
+			Name:              m.Name,
+			Description:       m.Description,
+			Version:           m.Version,
+			Icon:              m.Icon,
+			DefaultCreditCost: float64(m.Billing.CreditCost),
+			Status:            m.Status,
+		}
+		if err := pluginStore.Register(ctx, p); err != nil {
+			slog.Error("falha ao registrar plugin no banco", "slug", m.Slug, "error", err)
+		}
+	}
+
 	// Health Monitor — verifica saúde dos plugins a cada 30s
 	healthMonitor := gateway.NewHealthMonitor(pluginManager, 30*time.Second)
 	healthMonitor.Start()
@@ -164,6 +183,7 @@ func main() {
 		r.Get("/v1/account/me", accountHandler.Me)
 		r.Post("/v1/account/keys", keysHandler.Create)
 		r.Get("/v1/account/keys", keysHandler.List)
+		r.Put("/v1/account/keys/{id}", keysHandler.Update)
 		r.Delete("/v1/account/keys/{id}", keysHandler.Revoke)
 		r.Get("/v1/account/balance", billingHandler.GetBalance)
 		r.Get("/v1/account/credits", billingHandler.GetCredits)
@@ -174,20 +194,23 @@ func main() {
 		r.Post("/v1/account/secrets", billingHandler.SetSecret)
 		r.Get("/v1/account/secrets", billingHandler.ListSecrets)
 		r.Delete("/v1/account/secrets/{plugin}/{key}", billingHandler.DeleteSecret)
+		r.Post("/v1/account/plugins/{slug}/toggle", accountHandler.TogglePlugin)
+		r.Get("/v1/account/plugins", accountHandler.ListEnabledPlugins)
 	})
 
 	// === Admin (JWT auth) — operações administrativas ===
 	creditStore := &billing.CreditStore{DB: pool}
 	router.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(cfg.JWTSecret))
-		adminDispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor)
+		adminDispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor, pluginStore, accountHandler.DevStore)
 		r.Post("/v1/system/reload", adminDispatcher.HandleReload)
+		r.Post("/v1/system/plugins/{slug}/toggle", adminDispatcher.HandleTogglePlugin)
 	})
 
 	// === API (API Key auth) — acessa plugins com billing + secrets ===
 	router.Group(func(r chi.Router) {
 		r.Use(auth.APIKeyMiddleware(pool))
-		dispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor)
+		dispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor, pluginStore, accountHandler.DevStore)
 		dispatcher.RegisterRoutes(r)
 	})
 	// === Frontend SPA — embed.FS (embutido no binário) ===

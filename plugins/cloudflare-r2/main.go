@@ -21,7 +21,7 @@ var Handshake = plugin.HandshakeConfig{
 
 func main() {
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "{{PLUGIN_SLUG}}",
+		Name:   "cloudflare-r2",
 		Output: os.Stderr,
 		Level:  hclog.Info,
 	})

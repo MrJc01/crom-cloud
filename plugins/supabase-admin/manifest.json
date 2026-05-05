@@ -1,0 +1,33 @@
+{
+  "slug": "supabase-admin",
+  "name": "Supabase Admin",
+  "version": "0.1.0",
+  "description": "Plugin Supabase Admin para Crom Cloud",
+  "icon": "🔧",
+  "status": "active",
+  "runtime": {
+    "binary": "supabase-admin",
+    "language": "go",
+    "health_check_interval": "30s"
+  },
+  "billing": {
+    "model": "per_call",
+    "credit_cost": 1,
+    "premium_actions": {}
+  },
+  "required_secrets": [],
+  "api_routes": [
+    {
+      "method": "GET",
+      "path": "/ping",
+      "description": "Health check simples",
+      "scope": "read"
+    },
+    {
+      "method": "POST",
+      "path": "/execute",
+      "description": "Ação principal do plugin",
+      "scope": "write"
+    }
+  ]
+}

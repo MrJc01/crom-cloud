@@ -30,7 +30,7 @@ Router.register('/keys', async (app) => {
             ${keys.length > 0 ? keys.map(k => `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
               <td style="padding:12px 20px;font-size:13px;font-weight:600;">${UI.esc(k.label)}</td>
               <td style="padding:12px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#64748b;">${k.key_prefix}...</td>
-              <td style="padding:12px 20px;">${(k.permissions||[]).map(p => tag(p.plugin_slug+':'+p.scope)).join('')}</td>
+              <td style="padding:12px 20px;">${(k.permissions||[]).map(p => tag(p.plugin_slug)).join('')}</td>
               <td style="padding:12px 20px;font-size:13px;color:#94a3b8;">${k.rate_limit || '100/min'}</td>
               <td style="padding:12px 20px;font-size:13px;color:#94a3b8;">${UI.relTime(k.last_used_at)}</td>
               <td style="padding:12px 20px;">${k.is_active ? badge('● Ativa','#22c55e') : badge('Revogada','#ef4444')}</td>
@@ -48,14 +48,40 @@ Router.register('/keys', async (app) => {
 });
 
 const keysPage = {
-  showCreate() {
+  async showCreate() {
+    let pluginsHTML = '<div style="color:#64748b;font-size:12px;">Carregando plugins habilitados...</div>';
+    try {
+      const [resEnabled, resPlugins] = await Promise.all([
+        API.listEnabledPlugins(),
+        API.listPlugins()
+      ]);
+      const enabledSlugs = resEnabled.data?.enabled_plugins || [];
+      const allPlugins = resPlugins.data || [];
+      
+      const available = allPlugins.filter(p => enabledSlugs.includes(p.slug));
+      
+      if (available.length === 0) {
+        pluginsHTML = '<div style="color:#ef4444;font-size:12px;padding:8px;background:rgba(239,68,68,0.1);border-radius:6px;">Você não tem nenhum plugin habilitado no seu Workspace. Habilite-os primeiro no Marketplace.</div>';
+      } else {
+        pluginsHTML = available.map(p => `
+          <label style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;">
+            <input type="checkbox" name="plugin_scopes" value="${p.slug}" style="accent-color:#6366f1;">
+            <span style="font-size:13px;color:#e2e8f0;font-weight:600;">${UI.esc(p.name)} <span style="color:#64748b;font-weight:400;font-size:11px;">(${p.slug})</span></span>
+          </label>
+        `).join('');
+      }
+    } catch (e) {
+      pluginsHTML = '<div style="color:#ef4444;font-size:12px;">Erro ao carregar plugins.</div>';
+    }
+
     const el = document.createElement('div');
     el.innerHTML = UI.modal(`${I('key','w-5 h-5')} Nova API Key`, `
       ${UI.input('key-label', 'Nome da Key', { placeholder: 'Ex: Production Key', required: true })}
       <div style="margin-bottom:16px;">
-        <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#94a3b8;">Permissões</label>
-        <div id="key-perms" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-        <p style="font-size:12px;color:#64748b;margin-top:6px;">As permissões serão configuradas por plugin disponível.</p>
+        <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#94a3b8;">Escopo de Plugins</label>
+        <div id="key-perms" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;padding-right:8px;">
+          ${pluginsHTML}
+        </div>
       </div>
       <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
         ${UI.btn('Cancelar', 'secondary', 'onclick="document.getElementById(\'modal\').remove()"')}
@@ -66,8 +92,19 @@ const keysPage = {
   async create() {
     const label = document.getElementById('key-label')?.value;
     if (!label) return toast('Informe o nome da key', 'error');
+    
+    const checkboxes = document.querySelectorAll('input[name="plugin_scopes"]:checked');
+    const permissions = Array.from(checkboxes).map(cb => ({
+      plugin_slug: cb.value,
+      scope: 'read'
+    }));
+
+    if (permissions.length === 0) {
+      return toast('Selecione ao menos um plugin.', 'error');
+    }
+
     try {
-      const res = await API.createKey(label, [{ plugin_slug: 'echo', scope: 'write' }]);
+      const res = await API.createKey(label, permissions);
       document.getElementById('modal')?.remove();
       const keyModal = document.createElement('div');
       keyModal.innerHTML = UI.modal(`${I('check-circle','w-5 h-5')} Key Criada!`, `

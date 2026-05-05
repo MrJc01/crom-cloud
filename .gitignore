@@ -3,16 +3,11 @@
 /echo
 core/crom-cloud
 plugins/echo/echo
-plugins/**/[!.]*
-!plugins/**/manifest.json
-!plugins/**/main.go
-!plugins/**/handler.go
-!plugins/**/bridge.go
-!plugins/**/go.mod
-!plugins/**/go.sum
-!plugins/**/Makefile
-!plugins/**/scripts/
-plugins/**/*.bin
+plugins/*/*
+!plugins/*/*.*
+!plugins/*/Makefile
+!plugins/*/scripts/
+!plugins/*/*/
 *.exe
 
 # Frontend embed (cópia gerada por make sync-web)

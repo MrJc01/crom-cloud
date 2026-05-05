@@ -125,7 +125,7 @@ func DiscoverManifests(pluginsDir string) ([]*PluginManifest, []error) {
 		}
 
 		if m.Status == "disabled" {
-			continue
+			// Não ignorar, apenas manter na lista para o dashboard poder visualizar
 		}
 
 		manifests = append(manifests, m)

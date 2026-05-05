@@ -100,3 +100,52 @@ func (s *DeveloperStore) UpdateBalance(ctx context.Context, id uuid.UUID, newBal
 	}
 	return nil
 }
+
+// EnablePlugin habilita um plugin para o desenvolvedor.
+func (s *DeveloperStore) EnablePlugin(ctx context.Context, devID uuid.UUID, slug string) error {
+	_, err := s.DB.Exec(ctx,
+		`INSERT INTO developer_plugins (developer_id, plugin_slug, status) 
+		 VALUES ($1, $2, 'active')
+		 ON CONFLICT (developer_id, plugin_slug) DO UPDATE SET status = 'active', updated_at = NOW()`,
+		devID, slug,
+	)
+	if err != nil {
+		return fmt.Errorf("erro ao habilitar plugin: %w", err)
+	}
+	return nil
+}
+
+// DisablePlugin desabilita um plugin para o desenvolvedor.
+func (s *DeveloperStore) DisablePlugin(ctx context.Context, devID uuid.UUID, slug string) error {
+	_, err := s.DB.Exec(ctx,
+		`UPDATE developer_plugins SET status = 'disabled', updated_at = NOW() 
+		 WHERE developer_id = $1 AND plugin_slug = $2`,
+		devID, slug,
+	)
+	if err != nil {
+		return fmt.Errorf("erro ao desabilitar plugin: %w", err)
+	}
+	return nil
+}
+
+// ListEnabledPlugins lista os slugs de todos os plugins habilitados para um desenvolvedor.
+func (s *DeveloperStore) ListEnabledPlugins(ctx context.Context, devID uuid.UUID) ([]string, error) {
+	rows, err := s.DB.Query(ctx,
+		`SELECT plugin_slug FROM developer_plugins WHERE developer_id = $1 AND status = 'active'`,
+		devID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar plugins habilitados: %w", err)
+	}
+	defer rows.Close()
+
+	var slugs []string
+	for rows.Next() {
+		var slug string
+		if err := rows.Scan(&slug); err != nil {
+			return nil, fmt.Errorf("erro ao escanear slug: %w", err)
+		}
+		slugs = append(slugs, slug)
+	}
+	return slugs, rows.Err()
+}

@@ -15,6 +15,7 @@ import (
 
 	"github.com/crom/crom-cloud/core/internal/auth"
 	"github.com/crom/crom-cloud/core/internal/billing"
+	"github.com/crom/crom-cloud/core/internal/models"
 	"github.com/crom/crom-cloud/core/internal/server"
 	"github.com/crom/crom-cloud/core/internal/vault"
 	pb "github.com/crom/crom-cloud/core/proto"
@@ -26,15 +27,19 @@ type Dispatcher struct {
 	Vault   *vault.SecretStore   // Cofre de secrets para injeção nos plugins
 	Credits *billing.CreditStore // Sistema de créditos para billing
 	Health  *HealthMonitor       // Monitor de saúde dos plugins
+	Store   *models.PluginStore  // Store de plugins no DB
+	DevStore *models.DeveloperStore
 }
 
 // NewDispatcher cria um novo dispatcher com todas as dependências.
-func NewDispatcher(manager *PluginManager, vaultStore *vault.SecretStore, creditStore *billing.CreditStore, healthMonitor *HealthMonitor) *Dispatcher {
+func NewDispatcher(manager *PluginManager, vaultStore *vault.SecretStore, creditStore *billing.CreditStore, healthMonitor *HealthMonitor, store *models.PluginStore, devStore *models.DeveloperStore) *Dispatcher {
 	return &Dispatcher{
-		Manager: manager,
-		Vault:   vaultStore,
-		Credits: creditStore,
-		Health:  healthMonitor,
+		Manager:  manager,
+		Vault:    vaultStore,
+		Credits:  creditStore,
+		Health:   healthMonitor,
+		Store:    store,
+		DevStore: devStore,
 	}
 }
 
@@ -101,6 +106,30 @@ func (d *Dispatcher) HandlePluginRequest(w http.ResponseWriter, r *http.Request)
 			server.WriteError(w, http.StatusForbidden, "FORBIDDEN",
 				fmt.Sprintf("API Key não tem permissão para o plugin '%s'", slug))
 			return
+		}
+
+		// === Verificar se o plugin está habilitado para o Workspace ===
+		if d.DevStore != nil {
+			enabledSlugs, err := d.DevStore.ListEnabledPlugins(r.Context(), devUUID)
+			if err != nil {
+				slog.Error("erro ao checar plugins habilitados", "developer", devUUID, "error", err)
+				server.WriteError(w, http.StatusInternalServerError, "DB_ERROR", "Erro ao verificar acesso ao plugin")
+				return
+			}
+
+			isEnabled := false
+			for _, s := range enabledSlugs {
+				if s == slug {
+					isEnabled = true
+					break
+				}
+			}
+
+			if !isEnabled {
+				server.WriteError(w, http.StatusForbidden, "PLUGIN_NOT_ENABLED",
+					"Este plugin não está habilitado no seu Workspace. Habilite-o na página do plugin.")
+				return
+			}
 		}
 	}
 

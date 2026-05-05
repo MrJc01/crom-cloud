@@ -7,6 +7,7 @@ import (
 	"github.com/crom/crom-cloud/core/internal/auth"
 	"github.com/crom/crom-cloud/core/internal/models"
 	"github.com/crom/crom-cloud/core/internal/server"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -115,4 +116,70 @@ func (h *AccountHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	server.WriteSuccess(w, dev)
+}
+
+// TogglePlugin ativa ou desativa um plugin para a conta do desenvolvedor.
+func (h *AccountHandler) TogglePlugin(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_SLUG", "Slug do plugin não informado")
+		return
+	}
+
+	var req struct {
+		Action string `json:"action"` // "enable" ou "disable"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_JSON", "JSON inválido")
+		return
+	}
+
+	var err error
+	if req.Action == "enable" {
+		err = h.DevStore.EnablePlugin(r.Context(), authCtx.DeveloperID, slug)
+	} else if req.Action == "disable" {
+		err = h.DevStore.DisablePlugin(r.Context(), authCtx.DeveloperID, slug)
+	} else {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_ACTION", "Ação deve ser 'enable' ou 'disable'")
+		return
+	}
+
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "DB_ERROR", "Erro ao processar ativação: "+err.Error())
+		return
+	}
+
+	server.WriteSuccess(w, map[string]string{
+		"slug":   slug,
+		"status": req.Action + "d", // "enabled" / "disabled"
+	})
+}
+
+// ListEnabledPlugins lista os plugins habilitados para a conta atual.
+func (h *AccountHandler) ListEnabledPlugins(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	slugs, err := h.DevStore.ListEnabledPlugins(r.Context(), authCtx.DeveloperID)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "DB_ERROR", "Erro ao listar plugins")
+		return
+	}
+
+	if slugs == nil {
+		slugs = []string{}
+	}
+
+	server.WriteSuccess(w, map[string]interface{}{
+		"enabled_plugins": slugs,
+	})
 }

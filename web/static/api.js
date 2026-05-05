@@ -73,8 +73,13 @@ const API = {
   listSecrets() { return this.request('GET', '/account/secrets', null, { cacheKey: 'secrets', cacheTTL: 30000 }); },
   deleteSecret(pluginSlug, secretName) { this._cache = {}; return this.request('DELETE', `/account/secrets/${pluginSlug}/${secretName}`); },
 
+  // Account Plugins
+  toggleAccountPlugin(slug, action) { this._cache = {}; return this.request('POST', `/account/plugins/${slug}/toggle`, { action }); },
+  listEnabledPlugins() { return this.request('GET', '/account/plugins', null, { cacheKey: 'enabled_plugins', cacheTTL: 15000 }); },
+
   // System
   listPlugins() { return this.request('GET', '/system/plugins', null, { cacheKey: 'plugins', cacheTTL: 300000 }); },
+  toggleSystemPlugin(slug, enabled) { this._cache = {}; return this.request('POST', `/system/plugins/${slug}/toggle`, { enabled }); },
   health() { return this.request('GET', '/system/health', null, { cacheKey: 'health', cacheTTL: 10000 }); },
 
   // Generic

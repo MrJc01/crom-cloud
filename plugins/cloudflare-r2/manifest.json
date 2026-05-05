@@ -1,0 +1,33 @@
+{
+  "slug": "cloudflare-r2",
+  "name": "Cloudflare R2 Storage",
+  "version": "0.1.0",
+  "description": "Plugin Cloudflare R2 Storage para Crom Cloud",
+  "icon": "🔧",
+  "status": "active",
+  "runtime": {
+    "binary": "cloudflare-r2",
+    "language": "go",
+    "health_check_interval": "30s"
+  },
+  "billing": {
+    "model": "per_call",
+    "credit_cost": 1,
+    "premium_actions": {}
+  },
+  "required_secrets": [],
+  "api_routes": [
+    {
+      "method": "GET",
+      "path": "/ping",
+      "description": "Health check simples",
+      "scope": "read"
+    },
+    {
+      "method": "POST",
+      "path": "/execute",
+      "description": "Ação principal do plugin",
+      "scope": "write"
+    }
+  ]
+}

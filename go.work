@@ -3,4 +3,9 @@ go 1.25.0
 use (
 	./core
 	./plugins/echo
+	./plugins/cloudflare-dns
+	./plugins/cloudflare-r2
+	./plugins/supabase-admin
+	./plugins/vercel-manager
+	./plugins/github-actions
 )

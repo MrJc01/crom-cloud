@@ -21,7 +21,7 @@ var Handshake = plugin.HandshakeConfig{
 
 func main() {
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "{{PLUGIN_SLUG}}",
+		Name:   "vercel-manager",
 		Output: os.Stderr,
 		Level:  hclog.Info,
 	})

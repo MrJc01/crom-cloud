@@ -128,3 +128,56 @@ func (h *KeysHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 
 	server.WriteSuccess(w, map[string]string{"message": "Key revogada com sucesso"})
 }
+
+// Update altera as permissões (e opcionalmente o label) de uma API Key.
+func (h *KeysHandler) Update(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	keyIDStr := chi.URLParam(r, "id")
+	keyID, err := uuid.Parse(keyIDStr)
+	if err != nil {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_ID", "ID inválido")
+		return
+	}
+
+	var req struct {
+		Label       string `json:"label,omitempty"`
+		Permissions []struct {
+			PluginSlug string `json:"plugin_slug"`
+			Scope      string `json:"scope"`
+		} `json:"permissions"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		server.WriteError(w, http.StatusBadRequest, "INVALID_JSON", "JSON inválido")
+		return
+	}
+
+	if len(req.Permissions) == 0 {
+		server.WriteError(w, http.StatusBadRequest, "MISSING_PERMISSIONS", "A key deve ter pelo menos uma permissão")
+		return
+	}
+
+	var perms []models.KeyPermission
+	for _, p := range req.Permissions {
+		scope := p.Scope
+		if scope == "" {
+			scope = "read"
+		}
+		perms = append(perms, models.KeyPermission{
+			PluginSlug: p.PluginSlug,
+			Scope:      scope,
+		})
+	}
+
+	if err := h.KeyStore.UpdateKey(r.Context(), keyID, authCtx.DeveloperID, req.Label, perms); err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "UPDATE_ERROR", err.Error())
+		return
+	}
+
+	server.WriteSuccess(w, map[string]string{"message": "Key atualizada com sucesso"})
+}
