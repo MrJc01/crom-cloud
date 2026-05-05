@@ -1,0 +1,29 @@
+# Binários
+plugins/**/*.bin
+core/crom-cloud
+*.exe
+
+# Dependências
+vendor/
+node_modules/
+
+# Ambiente
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+tmp/
+
+# Protobuf gerado (opcional — pode comitar)
+# core/proto/*.pb.go

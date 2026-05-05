@@ -1,0 +1,131 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"time"
+
+	pb "github.com/crom/crom-cloud/core/proto"
+)
+
+// Bridge executa um script externo via stdin/stdout JSON.
+// O script recebe um JSON na stdin e deve retornar um JSON na stdout.
+type Bridge struct {
+	pb.UnimplementedCromPluginServer
+	ScriptPath string
+	Interpreter string
+}
+
+// NewBridge cria um bridge para o script.
+func NewBridge(scriptPath string) *Bridge {
+	ext := filepath.Ext(scriptPath)
+	interpreter := "bash"
+	switch ext {
+	case ".py":
+		interpreter = "python3"
+	case ".js":
+		interpreter = "node"
+	case ".sh":
+		interpreter = "bash"
+	case ".rb":
+		interpreter = "ruby"
+	}
+	return &Bridge{
+		ScriptPath:  scriptPath,
+		Interpreter: interpreter,
+	}
+}
+
+// GetManifest retorna informações do plugin.
+func (b *Bridge) GetManifest(ctx context.Context, _ *pb.Empty) (*pb.Manifest, error) {
+	return &pb.Manifest{
+		Slug:        "{{PLUGIN_SLUG}}",
+		Name:        "{{PLUGIN_NAME}}",
+		Version:     "0.1.0",
+		Description: "Plugin {{PLUGIN_NAME}} (bridge)",
+	}, nil
+}
+
+// HealthCheck verifica o plugin.
+func (b *Bridge) HealthCheck(ctx context.Context, _ *pb.Empty) (*pb.HealthResponse, error) {
+	return &pb.HealthResponse{
+		Healthy: true,
+		Message: fmt.Sprintf("bridge running (%s, %s)", b.Interpreter, runtime.GOOS),
+	}, nil
+}
+
+// ExecuteAction executa o script externo via subprocess.
+func (b *Bridge) ExecuteAction(ctx context.Context, req *pb.ActionRequest) (*pb.ActionResponse, error) {
+	// Montar input JSON para o script
+	input := map[string]interface{}{
+		"action":       req.Action,
+		"method":       req.Method,
+		"developer_id": req.DeveloperId,
+		"query_params": req.QueryParams,
+		"headers":      req.Headers,
+		"secrets":      req.Secrets,
+	}
+
+	// Payload como objeto se possível
+	if len(req.Payload) > 0 {
+		var payload interface{}
+		if json.Unmarshal(req.Payload, &payload) == nil {
+			input["payload"] = payload
+		} else {
+			input["payload"] = string(req.Payload)
+		}
+	}
+
+	inputJSON, _ := json.Marshal(input)
+
+	// Executar script com timeout
+	execCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(execCtx, b.Interpreter, b.ScriptPath)
+	cmd.Stdin = bytes.NewReader(inputJSON)
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return &pb.ActionResponse{
+			StatusCode:   500,
+			ErrorMessage: fmt.Sprintf("Erro ao executar script: %s (stderr: %s)", err.Error(), stderr.String()),
+		}, nil
+	}
+
+	// Parse output do script
+	var output struct {
+		StatusCode int             `json:"status_code"`
+		Data       json.RawMessage `json:"data"`
+		Error      string          `json:"error"`
+	}
+
+	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
+		// Se script não retornou JSON válido, usar stdout como data
+		data, _ := json.Marshal(map[string]string{
+			"raw_output": stdout.String(),
+		})
+		return &pb.ActionResponse{
+			StatusCode: 200,
+			Data:       data,
+		}, nil
+	}
+
+	if output.StatusCode == 0 {
+		output.StatusCode = 200
+	}
+
+	return &pb.ActionResponse{
+		StatusCode:   int32(output.StatusCode),
+		Data:         output.Data,
+		ErrorMessage: output.Error,
+	}, nil
+}

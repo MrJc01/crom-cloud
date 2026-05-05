@@ -1,0 +1,12 @@
+.PHONY: build clean test
+
+BINARY={{PLUGIN_SLUG}}
+
+build:
+	go build -o $(BINARY) .
+
+clean:
+	rm -f $(BINARY)
+
+test:
+	go test ./... -v

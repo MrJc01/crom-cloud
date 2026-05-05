@@ -1,0 +1,24 @@
+{
+  "slug": "echo",
+  "name": "Echo Test Plugin",
+  "version": "1.0.0",
+  "description": "Plugin de teste que ecoa requisições de volta. Usado para validar que o pipeline Core → Plugin funciona.",
+  "icon": "zap",
+  "status": "active",
+  "runtime": {
+    "binary": "./echo",
+    "language": "go",
+    "health_check_interval": "30s"
+  },
+  "billing": {
+    "model": "per_call",
+    "credit_cost": 0,
+    "premium_actions": {}
+  },
+  "required_secrets": [],
+  "api_routes": [
+    {"method": "GET", "path": "/ping", "description": "Retorna pong", "scope": "read"},
+    {"method": "POST", "path": "/reflect", "description": "Ecoa o payload recebido", "scope": "write"},
+    {"method": "GET", "path": "/check-secrets", "description": "Lista secrets injetados", "scope": "read"}
+  ]
+}

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package cromcloud;
+
+option go_package = "github.com/crom/crom-cloud/core/proto";
+
+// CromPlugin é o serviço que TODO plugin deve implementar.
+service CromPlugin {
+  // Retorna informações sobre o plugin (metadados do manifest).
+  rpc GetManifest(Empty) returns (Manifest);
+
+  // Health check — verifica se o plugin está vivo.
+  rpc HealthCheck(Empty) returns (HealthResponse);
+
+  // Executa uma ação do plugin.
+  rpc ExecuteAction(ActionRequest) returns (ActionResponse);
+}
+
+message Empty {}
+
+message Manifest {
+  string slug = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  string icon = 5;
+  repeated RouteInfo routes = 6;
+}
+
+message RouteInfo {
+  string method = 1;   // GET, POST, PUT, DELETE
+  string path = 2;     // /zones, /generate
+  string scope = 3;    // read, write, admin
+}
+
+message ActionRequest {
+  string action = 1;                    // Nome da rota/ação solicitada
+  string method = 2;                    // HTTP method original
+  bytes payload = 3;                    // Body da requisição (JSON)
+  map<string, string> headers = 4;      // Headers HTTP relevantes
+  map<string, string> secrets = 5;      // Tokens injetados pelo Core (do cofre)
+  string developer_id = 6;             // ID do desenvolvedor autenticado
+  map<string, string> query_params = 7; // Query string parameters
+}
+
+message ActionResponse {
+  int32 status_code = 1;    // HTTP status code de resposta
+  bytes data = 2;           // JSON de resposta
+  string error_message = 3; // Vazio se sucesso
+}
+
+message HealthResponse {
+  bool healthy = 1;
+  string message = 2;
+}
