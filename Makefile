@@ -1,4 +1,4 @@
-.PHONY: proto build dev test test-unit test-all docker-up docker-down clean migrate-up migrate-down migrate-create
+.PHONY: proto build dev test test-unit test-all docker-up docker-down clean migrate-up migrate-down migrate-create sync-web
 
 # Gera código Go a partir do .proto
 proto:
@@ -6,8 +6,15 @@ proto:
 		--go-grpc_out=. --go-grpc_out=paths=source_relative \
 		plugin.proto
 
-# Compila o binário do Core
-build:
+# Sincroniza frontend para embed.FS
+sync-web:
+	@mkdir -p core/web/static
+	@cp web/index.html core/web/index.html
+	@cp -r web/static/* core/web/static/
+	@echo "✅ Frontend sincronizado para core/web/"
+
+# Compila o binário do Core (inclui frontend embed)
+build: sync-web
 	cd core && go build -o crom-cloud ./cmd/crom-cloud
 
 # Compila o plugin echo

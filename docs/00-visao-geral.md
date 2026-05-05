@@ -1,7 +1,7 @@
 # Crom Cloud — Visão Geral do Produto
 
-> **Última atualização:** 2026-05-04
-> **Status:** Em planejamento
+> **Última atualização:** 2026-05-05
+> **Status:** Em desenvolvimento ativo
 
 ---
 

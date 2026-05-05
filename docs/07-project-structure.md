@@ -2,6 +2,7 @@
 
 > **Organização:** Monorepo com Go Workspace (`go.work`)
 > **Convenção:** Cada plugin é um módulo Go independente
+> **Última atualização:** 2026-05-05
 
 ---
 
@@ -19,130 +20,110 @@ crom-cloud/
 │   ├── 05-credit-system.md              # Sistema de créditos
 │   ├── 06-security.md                    # Segurança e isolamento
 │   ├── 07-project-structure.md           # Este documento
-│   └── 08-roadmap.md                     # Checklist de execução
+│   ├── 08-roadmap.md                     # Fases de implementação
+│   └── 09-checklist.md                   # Checklist de execução
 │
 ├── core/                                   # ══ CORE (Go) — O Cérebro ══
 │   ├── cmd/
 │   │   └── crom-cloud/
-│   │       └── main.go                    # Entrypoint do servidor
+│   │       └── main.go                    # Entrypoint (auto-migrate, router, shutdown)
 │   │
 │   ├── internal/
+│   │   ├── config/
+│   │   │   └── config.go                 # Carrega .env + envconfig
+│   │   │
 │   │   ├── server/
-│   │   │   ├── router.go                 # Router dinâmico /v1/{slug}/*
-│   │   │   └── middleware.go             # CORS, logging, recovery
+│   │   │   ├── router.go                 # Router chi + middlewares padrão
+│   │   │   ├── response.go              # APIResponse, WriteJSON, WriteError
+│   │   │   ├── middleware.go            # SecurityHeaders, MaxBodySize
+│   │   │   ├── ratelimit.go             # Rate limiting via Redis
+│   │   │   └── sanitize.go             # Validação de input (email, slug, UUID)
 │   │   │
 │   │   ├── auth/
-│   │   │   ├── apikey.go                 # Validação SHA-256 de API Key
-│   │   │   ├── permissions.go            # Verifica scope da key vs plugin
-│   │   │   └── session.go               # JWT para o Dashboard web
+│   │   │   ├── apikey.go                 # Middleware API Key (SHA-256) + HasPermission()
+│   │   │   ├── jwt_middleware.go        # Middleware JWT para Dashboard
+│   │   │   └── session.go               # GenerateJWT, ValidateJWT
 │   │   │
 │   │   ├── billing/
-│   │   │   ├── credits.go               # Débito/crédito atômico
-│   │   │   ├── pricing.go               # Lê custos do manifest.json
-│   │   │   └── usage.go                 # Registra no usage_log
+│   │   │   └── credits.go               # DebitCredits, RefundCredits, AddCredits,
+│   │   │                                 # GetBalance, LogUsage, GetCreditHistory,
+│   │   │                                 # GetUsageLogs, GetUsageSummary
 │   │   │
 │   │   ├── gateway/
-│   │   │   ├── discovery.go             # Escaneia /plugins/*/manifest.json
-│   │   │   ├── dispatcher.go            # Despacha HTTP → gRPC do plugin
-│   │   │   └── health.go               # Health check periódico
+│   │   │   ├── manifest.go              # PluginManifest struct + LoadManifest + Validate
+│   │   │   ├── discovery.go             # PluginManager: Discover, GetPlugin, Shutdown
+│   │   │   ├── dispatcher.go            # HTTP → gRPC: auth, billing, secrets, dispatch
+│   │   │   ├── health.go               # HealthMonitor: goroutine periódica 30s
+│   │   │   └── reload.go               # Hot reload: POST /v1/system/reload
 │   │   │
 │   │   ├── vault/
-│   │   │   └── secrets.go              # CRUD + AES-256-GCM de secrets
+│   │   │   └── secrets.go              # AES-256-GCM: Set/Get/Delete/ListSecrets
+│   │   │
+│   │   ├── handlers/
+│   │   │   ├── account.go              # Register, Login, Me
+│   │   │   ├── keys.go                 # Create, List, Revoke API Keys
+│   │   │   └── billing.go             # GetBalance, AddCredits, GetCredits,
+│   │   │                               # GetCreditHistory, GetUsage, GetUsageSummary,
+│   │   │                               # SetSecret, ListSecrets, DeleteSecret
 │   │   │
 │   │   └── models/
-│   │       ├── developer.go             # Model: Developer
-│   │       ├── apikey.go                # Model: API Key + Permissions
-│   │       ├── usage.go                 # Model: Usage Log
-│   │       ├── secret.go               # Model: Dev Secret
-│   │       ├── credit.go               # Model: Credit Transaction
-│   │       └── plugin.go               # Model: Plugin Registry
+│   │       ├── developer.go             # Model: Developer (Create, FindByEmail/ID)
+│   │       └── apikey.go                # Model: APIKey + KeyPermission (Generate, FindByHash)
 │   │
 │   ├── proto/
 │   │   ├── plugin.proto                 # Contrato gRPC (fonte de verdade)
-│   │   └── plugin_grpc.pb.go           # Gerado: protoc --go_out
-│   │
-│   ├── web/                             # Dashboard Frontend
-│   │   ├── index.html                   # SPA entry point
-│   │   ├── assets/
-│   │   │   ├── css/style.css
-│   │   │   └── js/app.js
-│   │   └── pages/
-│   │       ├── dashboard.html           # Visão geral (créditos, uso)
-│   │       ├── api-keys.html            # CRUD de API Keys
-│   │       ├── secrets.html             # Cofre de tokens externos
-│   │       └── usage.html               # Logs de consumo
+│   │   ├── plugin.pb.go                # Gerado: protoc --go_out
+│   │   └── plugin_grpc.pb.go           # Gerado: protoc --go-grpc_out
 │   │
 │   ├── go.mod
 │   └── go.sum
 │
 ├── plugins/                               # ══ PLUGINS ATIVOS ══
 │   │                                      # (Core escaneia ao iniciar)
-│   │
-│   ├── dns-manager/                       # ── Plugin 100% Go ──
-│   │   ├── manifest.json
-│   │   ├── main.go                       # Wrapper gRPC
-│   │   ├── handler.go                    # Lógica: list_zones, create_record
-│   │   ├── go.mod
-│   │   ├── Makefile
-│   │   └── dns-manager.bin              # (gitignored)
-│   │
-│   ├── ai-proxy/                          # ── Plugin Go + Python ──
-│   │   ├── manifest.json
-│   │   ├── main.go                       # Wrapper gRPC
-│   │   ├── bridge.go                     # Executor de subprocesso
-│   │   ├── go.mod
-│   │   ├── Makefile
-│   │   ├── ai-proxy.bin                  # (gitignored)
-│   │   └── scripts/
-│   │       ├── requirements.txt
-│   │       ├── engine.py                 # Lógica real (Python)
-│   │       └── models/
-│   │           └── openai_adapter.py
-│   │
-│   ├── web-scraper/                       # ── Plugin Go + Node.js ──
-│   │   ├── manifest.json
-│   │   ├── main.go
-│   │   ├── bridge.go
-│   │   ├── go.mod
-│   │   ├── Makefile
-│   │   ├── web-scraper.bin              # (gitignored)
-│   │   └── scripts/
-│   │       ├── package.json
-│   │       ├── scraper.js
-│   │       └── utils/
-│   │           └── parser.js
-│   │
-│   └── backup-tool/                       # ── Plugin Go + Bash ──
+│   └── echo/                             # ── Plugin de Teste ──
 │       ├── manifest.json
-│       ├── main.go
-│       ├── bridge.go
+│       ├── main.go                       # Wrapper gRPC + handler
 │       ├── go.mod
-│       ├── Makefile
-│       ├── backup-tool.bin
-│       └── scripts/
-│           ├── backup.sh
-│           └── restore.sh
+│       └── echo                          # Binário compilado (gitignored)
 │
 ├── templates/                             # ══ FÁBRICA DE PLUGINS ══
-│   │
 │   ├── template-go/                      # Template: Plugin 100% Go
 │   │   ├── manifest.json.tmpl
 │   │   ├── main.go.tmpl
 │   │   ├── handler.go.tmpl
 │   │   ├── go.mod.tmpl
-│   │   └── Makefile
+│   │   └── Makefile.tmpl
 │   │
 │   └── template-multilang/               # Template: Go + Outra Linguagem
 │       ├── manifest.json.tmpl
 │       ├── main.go.tmpl
-│       ├── bridge.go.tmpl
+│       ├── bridge.go.tmpl               # Executor de subprocesso stdin/stdout
 │       ├── go.mod.tmpl
-│       ├── Makefile
+│       ├── Makefile.tmpl
 │       └── scripts/
 │           └── .gitkeep
 │
+├── web/                                   # ══ DASHBOARD SPA ══
+│   ├── index.html                        # Entry point
+│   └── static/
+│       ├── style.css                     # Estilos globais
+│       ├── router.js                     # SPA router (hash-based)
+│       ├── api.js                        # Fetch helpers
+│       ├── app.js                        # App bootstrap
+│       └── pages/                        # Páginas da SPA
+│           ├── home.js
+│           ├── auth.js
+│           ├── dashboard.js
+│           ├── keys.js
+│           ├── secrets.js
+│           ├── billing.js
+│           ├── plugins.js
+│           └── docs.js
+│
 ├── tests/                                 # ══ TESTES ══
 │   ├── README.md
+│   ├── run_all.sh                        # Script runner completo
+│   ├── docker-compose.test.yml          # Infra para testes
 │   ├── core/                             # Testes unitários do Core
 │   ├── integration/                      # Testes de integração
 │   ├── e2e/                              # Testes end-to-end
@@ -151,19 +132,23 @@ crom-cloud/
 ├── tools/                                 # Scripts de automação
 │   └── create-plugin.sh                  # Scaffolding de novos plugins
 │
-├── migrations/                            # Migrações SQL
-│   ├── 001_create_developers.up.sql
-│   ├── 001_create_developers.down.sql
-│   ├── 002_create_api_keys.up.sql
-│   └── ...
+├── migrations/                            # Migrações SQL (auto-migrate)
+│   ├── 001_create_developers.{up,down}.sql
+│   ├── 002_create_api_keys.{up,down}.sql
+│   ├── 003_create_key_permissions.{up,down}.sql
+│   ├── 004_create_credit_transactions.{up,down}.sql
+│   ├── 005_create_usage_logs.{up,down}.sql
+│   ├── 006_create_dev_secrets.{up,down}.sql
+│   └── 007_create_plugin_registry.{up,down}.sql
 │
 ├── docker-compose.yml                     # Core + PostgreSQL + Redis
-├── Dockerfile                             # Build do Core
-├── go.work                                # Go Workspace
+├── Dockerfile                             # Multi-stage build (Go → Alpine)
+├── go.work                                # Go Workspace (core + plugins)
 ├── .env.example                           # Variáveis de ambiente
+├── .env                                   # Config local (gitignored)
 ├── .gitignore
 ├── Makefile                               # Comandos globais
-└── README.md
+└── README.md                              # Documentação de entrada
 ```
 
 ---
@@ -172,20 +157,22 @@ crom-cloud/
 
 | Item | Convenção | Exemplo |
 |------|-----------|---------|
-| Pasta de plugin | `kebab-case` | `dns-manager`, `ai-proxy` |
-| Slug do plugin | `kebab-case` | `dns`, `ai`, `web-scraper` |
-| Binário compilado | `{slug}.bin` | `dns-manager.bin` |
-| Arquivos Go | `snake_case.go` | `api_key.go`, `handler.go` |
-| Scripts externos | Convenção da linguagem | `engine.py`, `scraper.js` |
+| Pasta de plugin | `kebab-case` | `echo`, `dns-manager` |
+| Slug do plugin | `kebab-case` | `echo`, `ai-proxy` |
+| Binário compilado | Nome do slug (sem extensão) | `echo`, `dns-manager` |
+| Arquivos Go | `snake_case.go` | `apikey.go`, `handler.go` |
+| Scripts externos | Convenção da linguagem | `main.py`, `main.js` |
 | Migrações SQL | `NNN_description.{up\|down}.sql` | `001_create_developers.up.sql` |
+| Templates | `nome.ext.tmpl` | `main.go.tmpl`, `manifest.json.tmpl` |
 
 ---
 
-## .gitignore Sugerido
+## .gitignore
 
 ```gitignore
 # Binários compilados dos plugins
-plugins/**/*.bin
+plugins/*/echo
+plugins/*/*.bin
 
 # Dependências
 vendor/

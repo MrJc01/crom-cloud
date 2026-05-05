@@ -74,58 +74,100 @@ curl -H "Authorization: Bearer crom_sk_live_7f3a8b2c..." \
 
 ---
 
-## 4. Endpoints do Sistema (Conta do Desenvolvedor)
+## 4. Endpoints Públicos (Sem Autenticação)
 
-### `GET /v1/account/me`
-Retorna informações da conta autenticada.
+### `POST /v1/account/register` — Registrar Desenvolvedor
 ```json
+// Request
+{"email": "dev@example.com", "name": "João Dev", "password": "minha_senha_segura"}
+
+// Response (201)
+{"success": true, "data": {"id": "uuid-123", "email": "dev@example.com", "name": "João Dev"}}
+```
+
+### `POST /v1/account/login` — Autenticar e Obter JWT
+```json
+// Request
+{"email": "dev@example.com", "password": "minha_senha_segura"}
+
+// Response (200)
 {
   "success": true,
   "data": {
-    "id": "uuid-123",
-    "email": "dev@example.com",
-    "name": "João Dev",
-    "plan": "pro",
-    "credit_balance": 4850.00,
-    "created_at": "2026-01-15T10:00:00Z"
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "developer": {"id": "uuid-123", "email": "dev@example.com", "name": "João Dev"}
   }
 }
 ```
 
+### `GET /v1/system/plugins` — Listar Plugins Disponíveis
+### `GET /v1/system/health/plugins` — Status de Saúde dos Plugins
+
+---
+
+## 5. Endpoints do Dashboard (JWT Auth)
+
+> Autenticação: `Authorization: Bearer <jwt_token>`
+
+### `GET /v1/account/me`
+Retorna informações da conta autenticada.
+
+### `GET /v1/account/balance`
+Retorna saldo atual de créditos.
+
 ### `GET /v1/account/credits`
-Retorna saldo e histórico de transações de créditos.
+Retorna saldo com informações detalhadas.
+```json
+{"success": true, "data": {"balance": 4850.00, "currency": "credits"}}
+```
+
+### `GET /v1/account/credits/history`
+Retorna histórico de transações.
+**Query Params:** `?type=debit|credit|refund&limit=50&offset=0`
 ```json
 {
   "success": true,
   "data": {
-    "balance": 4850.00,
     "transactions": [
-      {"type": "purchase", "amount": 5000, "description": "Compra via PIX", "created_at": "..."},
-      {"type": "consumption", "amount": -50, "description": "ai-proxy: generate", "created_at": "..."}
-    ]
+      {"id": "uuid", "amount": -1.0, "type": "debit", "description": "echo:ping", "balance_after": 99.0, "created_at": "..."}
+    ],
+    "limit": 50, "offset": 0
   }
 }
+```
+
+### `POST /v1/account/credits` — Adicionar Créditos
+```json
+// Request
+{"amount": 100.0, "type": "purchase", "description": "Compra via PIX"}
 ```
 
 ### `GET /v1/account/usage`
 Retorna histórico de uso com filtros.
-
-**Query Params:** `?plugin=dns&from=2026-05-01&to=2026-05-04&limit=100`
+**Query Params:** `?plugin=echo&from=2026-05-01&to=2026-05-05&limit=50&offset=0`
 ```json
 {
   "success": true,
   "data": {
-    "total_calls": 342,
-    "total_credits": 1250,
-    "logs": [
-      {
-        "plugin": "dns",
-        "action": "list_zones",
-        "credits": 1,
-        "status": 200,
-        "latency_ms": 89,
-        "created_at": "2026-05-04T14:30:00Z"
-      }
+    "logs": [{"plugin_slug": "echo", "action": "ping", "credits_charged": 1.0, "status_code": 200, "latency_ms": 15}],
+    "total_records": 342,
+    "total_credits": 342.0,
+    "limit": 50, "offset": 0
+  }
+}
+```
+
+### `GET /v1/account/usage/summary` — Resumo Mensal
+**Query Params:** `?from=2026-05-01&to=2026-05-31`
+```json
+{
+  "success": true,
+  "data": {
+    "period": {"from": "2026-05-01", "to": "2026-05-31"},
+    "total_calls": 1200,
+    "total_credits": 1200.0,
+    "by_plugin": [
+      {"plugin_slug": "echo", "total_calls": 1200, "total_credits": 1200.0, "avg_latency_ms": 12.5}
     ]
   }
 }
@@ -133,7 +175,7 @@ Retorna histórico de uso com filtros.
 
 ---
 
-## 5. Endpoints de API Keys
+## 6. Endpoints de API Keys (JWT Auth)
 
 ### `POST /v1/account/keys` — Criar Nova Key
 ```json
@@ -141,12 +183,9 @@ Retorna histórico de uso com filtros.
 {
   "label": "Backend Produção",
   "permissions": [
-    {"plugin": "dns", "scope": "write"},
-    {"plugin": "storage", "scope": "read"},
-    {"plugin": "ai", "scope": "write"}
-  ],
-  "expires_at": "2027-01-01T00:00:00Z",
-  "rate_limit_rpm": 120
+    {"plugin_slug": "echo", "scope": "write"},
+    {"plugin_slug": "dns", "scope": "read"}
+  ]
 }
 
 // Response (a key completa só aparece UMA VEZ)
@@ -156,63 +195,36 @@ Retorna histórico de uso com filtros.
     "id": "uuid-key-456",
     "key": "crom_sk_live_7f3a8b2c4d5e6f7g8h9i0j...",
     "label": "Backend Produção",
-    "permissions": [...],
-    "created_at": "2026-05-04T22:00:00Z"
+    "permissions": [...]
   }
 }
 ```
 
 ### `GET /v1/account/keys` — Listar Keys
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid-key-456",
-      "key_prefix": "crom_sk_live_7f3a",
-      "label": "Backend Produção",
-      "is_active": true,
-      "permissions": [{"plugin": "dns", "scope": "write"}],
-      "last_used_at": "2026-05-04T21:30:00Z"
-    }
-  ]
-}
-```
-
 ### `DELETE /v1/account/keys/{id}` — Revogar Key
-```json
-{"success": true, "data": {"message": "Key revogada com sucesso"}}
-```
 
 ---
 
-## 6. Endpoints de Secrets (Cofre)
+## 7. Endpoints de Secrets (JWT Auth)
 
-### `POST /v1/account/secrets` — Cadastrar Token Externo
+### `POST /v1/account/secrets` — Cadastrar Secret
 ```json
 // Request
-{
-  "plugin_slug": "ai",
-  "secret_name": "openai_api_key",
-  "secret_label": "Minha chave OpenAI",
-  "value": "sk-proj-abc123..."
-}
-
-// Response (o valor NUNCA é retornado)
-{
-  "success": true,
-  "data": {
-    "id": "uuid-secret-789",
-    "plugin_slug": "ai",
-    "secret_name": "openai_api_key",
-    "secret_label": "Minha chave OpenAI",
-    "created_at": "2026-05-04T22:00:00Z"
-  }
-}
+{"plugin_slug": "ai", "secret_name": "openai_api_key", "secret_label": "Minha chave OpenAI", "value": "sk-proj-abc123..."}
 ```
 
 ### `GET /v1/account/secrets` — Listar Secrets (sem valores)
-### `DELETE /v1/account/secrets/{id}` — Remover Secret
+### `DELETE /v1/account/secrets/{plugin}/{key}` — Remover Secret
+
+---
+
+## 8. Endpoints Admin (JWT Auth)
+
+### `POST /v1/system/reload` — Hot Reload de Plugins
+Re-escaneia a pasta de plugins e atualiza o registry.
+```json
+{"success": true, "data": {"added": ["new-plugin"], "removed": [], "unchanged": ["echo"]}}
+```
 
 ---
 

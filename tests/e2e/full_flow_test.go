@@ -10,8 +10,17 @@ package e2e_test
 // Testam o fluxo real de um desenvolvedor usando o Crom Cloud.
 
 import (
+	"os"
 	"testing"
 )
+
+// skipUnlessE2E pula o teste se não estiver em ambiente de testes E2E.
+func skipUnlessE2E(t *testing.T) {
+	t.Helper()
+	if os.Getenv("CROM_TEST_E2E") == "" {
+		t.Skip("Requer CROM_TEST_E2E=true. Rodar com: make test-e2e")
+	}
+}
 
 // TestFullDeveloperFlow testa o ciclo completo de um desenvolvedor
 func TestFullDeveloperFlow(t *testing.T) {

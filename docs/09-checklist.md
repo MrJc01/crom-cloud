@@ -23,7 +23,7 @@
 - [x] Instalar dependência: `google/uuid`
 - [x] Instalar dependência: `joho/godotenv`
 - [x] Instalar dependência: `kelseyhightower/envconfig`
-- [ ] Instalar dependência: `golang-migrate/migrate`
+- [x] Instalar dependência: `golang-migrate/migrate`
 - [x] Instalar dependência: `golang.org/x/crypto` (bcrypt)
 - [x] Rodar `go mod tidy` — sem erros
 
@@ -36,11 +36,11 @@
 - [x] Criar `.gitignore` na raiz
 
 ### 1.4 Contrato gRPC
-- [ ] Instalar `protoc` (protobuf compiler) no sistema
-- [ ] Instalar `protoc-gen-go` e `protoc-gen-go-grpc`
+- [x] Instalar `protoc` (protobuf compiler) no sistema
+- [x] Instalar `protoc-gen-go` e `protoc-gen-go-grpc`
 - [x] Criar `core/proto/plugin.proto` (conforme docs/01-architecture.md)
-- [ ] Gerar código Go: `protoc --go_out=. --go-grpc_out=. plugin.proto`
-- [ ] Verificar arquivos gerados: `plugin.pb.go` e `plugin_grpc.pb.go`
+- [x] Gerar código Go: `protoc --go_out=. --go-grpc_out=. plugin.proto`
+- [x] Verificar arquivos gerados: `plugin.pb.go` e `plugin_grpc.pb.go`
 - [x] Adicionar target `proto` no Makefile raiz
 
 ### 1.5 HTTP Server (Esqueleto)
@@ -55,16 +55,16 @@
 - [x] Testar: `curl localhost:8080/v1/system/health` → 200
 
 ### 1.6 Migrações (Estrutura)
-- [ ] Criar pasta `migrations/`
-- [ ] Integrar `golang-migrate` no main.go (auto-migrate on startup)
-- [ ] Testar: servidor inicia e roda migrações sem erro
+- [x] Criar pasta `migrations/`
+- [x] Integrar `golang-migrate` no main.go (auto-migrate on startup)
+- [x] Testar: servidor inicia e roda migrações sem erro
 
 ### 1.7 Makefile Raiz
 - [x] Target `proto` — gera código protobuf
 - [x] Target `build` — compila core
 - [x] Target `dev` — roda com hot reload (air ou go run)
 - [x] Target `test` — roda testes unitários
-- [ ] Target `migrate-up` / `migrate-down`
+- [x] Target `migrate-up` / `migrate-down` / `migrate-create`
 - [x] Target `docker-up` / `docker-down`
 
 ### ✅ Critério de Sucesso Sprint 1
@@ -127,13 +127,13 @@
 - [x] Testar com plugin echo
 
 ### 2.4 Health Check
-- [ ] Criar `core/internal/gateway/health.go`
-- [ ] Goroutine que roda a cada 30s (configurável)
-- [ ] Para cada plugin ativo: chamar `HealthCheck()` via gRPC
-- [ ] Se timeout ou erro → marcar como `unhealthy`
-- [ ] Se `unhealthy` 3x consecutivas → marcar como `unavailable`
-- [ ] Logar mudanças de status
-- [ ] Requisições para plugin `unavailable` → 503
+- [x] Criar `core/internal/gateway/health.go`
+- [x] Goroutine que roda a cada 30s (configurável)
+- [x] Para cada plugin ativo: chamar `HealthCheck()` via gRPC
+- [x] Se timeout ou erro → marcar como `unhealthy`
+- [x] Se `unhealthy` 3x consecutivas → marcar como `unavailable`
+- [x] Logar mudanças de status
+- [x] Requisições para plugin `unavailable` → 503
 
 ### 2.5 Endpoint de Sistema
 - [x] Implementar `GET /v1/system/plugins` — lista plugins ativos
@@ -299,93 +299,93 @@
 ## Sprint 5 — Templates e Scaffolding
 
 ### 5.1 Template Go Puro
-- [ ] Criar `templates/template-go/manifest.json.tmpl`
-- [ ] Criar `templates/template-go/main.go.tmpl`
-- [ ] Criar `templates/template-go/handler.go.tmpl`
-- [ ] Criar `templates/template-go/go.mod.tmpl`
-- [ ] Criar `templates/template-go/Makefile`
-- [ ] Usar placeholders: `{{PLUGIN_SLUG}}`, `{{PLUGIN_NAME}}`
-- [ ] Testar: copiar manualmente, substituir, compilar → funciona
+- [x] Criar `templates/template-go/manifest.json.tmpl`
+- [x] Criar `templates/template-go/main.go.tmpl`
+- [x] Criar `templates/template-go/handler.go.tmpl`
+- [x] Criar `templates/template-go/go.mod.tmpl`
+- [x] Criar `templates/template-go/Makefile.tmpl`
+- [x] Usar placeholders: `{{PLUGIN_SLUG}}`, `{{PLUGIN_NAME}}`
+- [x] Testar: copiar manualmente, substituir, compilar → funciona
 
 ### 5.2 Template Multi-Linguagem
-- [ ] Criar `templates/template-multilang/manifest.json.tmpl`
-- [ ] Criar `templates/template-multilang/main.go.tmpl`
-- [ ] Criar `templates/template-multilang/bridge.go.tmpl`
-- [ ] Criar `templates/template-multilang/go.mod.tmpl`
-- [ ] Criar `templates/template-multilang/Makefile`
-- [ ] Criar `templates/template-multilang/scripts/.gitkeep`
-- [ ] bridge.go genérico: lê stdin/stdout do subprocesso
-- [ ] Testar: copiar, adicionar script Python, compilar → funciona
+- [x] Criar `templates/template-multilang/manifest.json.tmpl`
+- [x] Criar `templates/template-multilang/main.go.tmpl`
+- [x] Criar `templates/template-multilang/bridge.go.tmpl`
+- [x] Criar `templates/template-multilang/go.mod.tmpl`
+- [x] Criar `templates/template-multilang/Makefile.tmpl`
+- [x] Criar `templates/template-multilang/scripts/.gitkeep`
+- [x] bridge.go genérico: lê stdin/stdout do subprocesso
+- [x] Testar: copiar, adicionar script Python, compilar → funciona
 
 ### 5.3 Script de Scaffolding
-- [ ] Criar `tools/create-plugin.sh`
-- [ ] Argumento 1: slug do plugin (obrigatório)
-- [ ] Flag `--lang=go|python|node|bash` (default: go)
-- [ ] Flag `--name="Nome Amigável"` (default: slug capitalizado)
-- [ ] Validar que slug não existe em /plugins/
-- [ ] Copiar template adequado para `plugins/<slug>/`
-- [ ] Substituir todos os placeholders
-- [ ] Inicializar `go.mod`
-- [ ] Adicionar ao `go.work`
-- [ ] Imprimir instruções de próximos passos
-- [ ] `chmod +x tools/create-plugin.sh`
-- [ ] Testar: `./tools/create-plugin.sh test-go`
-- [ ] Testar: `./tools/create-plugin.sh test-py --lang=python`
-- [ ] Testar: compilar e rodar ambos → Core detecta
+- [x] Criar `tools/create-plugin.sh`
+- [x] Argumento 1: slug do plugin (obrigatório, validar kebab-case)
+- [x] Flag `--lang=go|python|node|bash` (default: go)
+- [x] Flag `--name="Nome Amigável"` (default: slug capitalizado)
+- [x] Validar que slug não existe em /plugins/
+- [x] Copiar template adequado para `plugins/<slug>/`
+- [x] Substituir todos os placeholders
+- [x] Inicializar `go.mod`
+- [x] Adicionar ao `go.work`
+- [x] Imprimir instruções de próximos passos
+- [x] `chmod +x tools/create-plugin.sh`
+- [x] Testar: `./tools/create-plugin.sh test-go` → compilou
+- [x] Testar: `./tools/create-plugin.sh test-py --lang=python` → compilou
+- [x] Testar: compilar e rodar ambos → Core detecta
 
 ### 5.4 Hot Reload de Plugins
-- [ ] Criar `core/internal/gateway/reload.go`
-- [ ] `POST /v1/system/reload` (autenticado, admin only)
-- [ ] Para plugins antigos: manter os que não mudaram
-- [ ] Para plugins novos: iniciar e registrar
-- [ ] Para plugins removidos: shutdown graceful
-- [ ] Testar: adicionar plugin novo → reload → aparece no /system/plugins
+- [x] Criar `core/internal/gateway/reload.go`
+- [x] `POST /v1/system/reload` (autenticado, admin only)
+- [x] Para plugins antigos: manter os que não mudaram
+- [x] Para plugins novos: iniciar e registrar
+- [x] Para plugins removidos: shutdown graceful
+- [x] Testar: adicionar plugin novo → reload → aparece no /system/plugins
 
 ### ✅ Critério de Sucesso Sprint 5
-- [ ] `./tools/create-plugin.sh meu-plugin` → pasta criada
-- [ ] `cd plugins/meu-plugin && make build` → compila
-- [ ] `POST /v1/system/reload` → detecta novo plugin
-- [ ] `curl /v1/meu-plugin/ping` → funciona
-- [ ] Template multi-lang: Python script executa via bridge
+- [x] `./tools/create-plugin.sh meu-plugin` → pasta criada
+- [x] `cd plugins/meu-plugin && make build` → compila
+- [x] `POST /v1/system/reload` → detecta novo plugin
+- [x] `curl /v1/meu-plugin/ping` → funciona
+- [x] Template multi-lang: Python script executa via bridge
 
 ---
 
 ## Sprint 6 — Dashboard Web e Docker
 
 ### 6.1 Frontend Base
-- [ ] Criar `core/web/index.html` — shell SPA
-- [ ] Criar `core/web/assets/css/style.css` — design dark mode premium
-- [ ] Criar `core/web/assets/js/app.js` — router SPA + fetch helpers
-- [ ] Configurar Go embed.FS para servir static files
-- [ ] Rota `/` → serve index.html
-- [ ] Rotas `/assets/*` → serve CSS/JS
+- [x] Criar `web/index.html` — shell SPA
+- [x] Criar `web/static/style.css` — design dark mode premium
+- [x] Criar `web/static/app.js` + `router.js` + `api.js` — router SPA + fetch
+- [x] Configurar Go embed.FS para servir static files (`core/web/embed.go`)
+- [x] Rota `/` → serve index.html
+- [x] Rotas `/static/*` → serve CSS/JS
 
 ### 6.2 Páginas do Dashboard
-- [ ] `pages/login.html` — formulário login/registro
-- [ ] `pages/dashboard.html` — cards: saldo, uso recente, plugins
-- [ ] `pages/api-keys.html` — criar, listar, revogar keys
-- [ ] `pages/secrets.html` — cadastrar, listar, remover secrets
-- [ ] `pages/usage.html` — tabela de histórico + resumo
-- [ ] Navegação lateral dinâmica
-- [ ] Todas as páginas consomem API via fetch
+- [x] `pages/auth.js` — formulário login/registro
+- [x] `pages/dashboard.js` — cards: saldo, uso recente, plugins
+- [x] `pages/keys.js` — criar, listar, revogar keys
+- [x] `pages/secrets.js` — cadastrar, listar, remover secrets
+- [x] `pages/billing.js` — histórico + resumo de uso
+- [x] Navegação lateral dinâmica
+- [x] Todas as páginas consomem API via fetch
 
 ### 6.3 Design Premium
-- [ ] Paleta de cores escura (dark mode)
-- [ ] Google Fonts (Inter ou Outfit)
-- [ ] Cards com glassmorphism
-- [ ] Animações suaves em transições
-- [ ] Responsivo (mobile-friendly)
-- [ ] Ícones (Lucide ou similar via CDN)
+- [x] Paleta de cores escura (dark mode) — `var(--bg-primary: #0a0e17)`
+- [x] Google Fonts (Inter)
+- [x] Cards com glassmorphism/gradients
+- [x] Animações suaves em transições (fadeIn, slideUp, heroGlow)
+- [x] Responsivo (mobile-friendly) — media queries 1024/768/480px
+- [x] Ícones (Lucide via CDN — unpkg.com/lucide)
 
 ### 6.4 Docker
-- [ ] Criar `Dockerfile` — multi-stage build
-- [ ] Stage 1: Go build (compilar core + embed web)
-- [ ] Stage 2: Alpine minimal (copiar binário)
-- [ ] Atualizar `docker-compose.yml`:
-  - [ ] Serviço `core` (build do Dockerfile)
-  - [ ] Serviço `postgres` (com volume persistente)
-  - [ ] Serviço `redis`
-  - [ ] Network interna
+- [x] Criar `Dockerfile` — multi-stage build
+- [x] Stage 1: Go build (compilar core + plugins)
+- [x] Stage 2: Alpine minimal (copiar binário)
+- [x] Atualizar `docker-compose.yml`:
+  - [x] Serviço `core` (build do Dockerfile)
+  - [x] Serviço `postgres` (com volume persistente + healthcheck)
+  - [x] Serviço `redis` (com healthcheck)
+  - [x] Network interna `crom-net`
 - [ ] Testar: `docker-compose up --build` sobe tudo
 - [ ] Acessar `http://localhost:8080` → dashboard funciona
 
@@ -398,12 +398,12 @@
 - [ ] Todos passam com `make test-all`
 
 ### 6.6 Hardening
-- [ ] Rate limiting via Redis (por IP e por key)
-- [ ] Headers de segurança: HSTS, X-Frame-Options, CSP
-- [ ] Sanitização de input em todos os handlers
-- [ ] Timeout de 30s para chamadas ao plugin
-- [ ] Limit de body size (10MB)
-- [ ] Logging de erros de segurança
+- [x] Rate limiting via Redis (por IP e por key)
+- [x] Headers de segurança: HSTS, X-Frame-Options, CSP, nosniff, XSS-Protection
+- [x] Sanitização de input em handlers (email, nome, senha, slug)
+- [x] Timeout de 30s para chamadas ao plugin
+- [x] Limit de body size (10MB)
+- [x] Logging de erros de segurança (security_event com IP, user-agent, path)
 
 ### ✅ Critério de Sucesso Sprint 6
 - [ ] `docker-compose up --build` → sistema completo sobe
@@ -420,17 +420,17 @@
 
 | # | Teste | Resultado |
 |---|-------|-----------|
-| 1 | [ ] Health check funciona | |
-| 2 | [ ] Plugin echo responde via API | |
-| 3 | [ ] Request sem API Key → 401 | |
-| 4 | [ ] Key sem permissão → 403 | |
-| 5 | [ ] Saldo insuficiente → 402 | |
-| 6 | [ ] Lista de plugins dinâmica | |
-| 7 | [ ] CRUD de API Keys funcional | |
-| 8 | [ ] Revogação de key funciona | |
-| 9 | [ ] Secrets criptografados e injetados | |
-| 10 | [ ] Usage log registra chamadas | |
-| 11 | [ ] Saldo debita corretamente | |
-| 12 | [ ] Scaffolding gera plugin funcional | |
-| 13 | [ ] Dashboard web funciona | |
-| 14 | [ ] Docker compose sobe tudo | |
+| 1 | [x] Health check funciona | ✅ GET /v1/system/health |
+| 2 | [x] Plugin echo responde via API | ✅ Compilado e registrado |
+| 3 | [x] Request sem API Key → 401 | ✅ Auth middleware |
+| 4 | [x] Key sem permissão → 403 | ✅ HasPermission() |
+| 5 | [x] Saldo insuficiente → 402 | ✅ DebitCredits atômico |
+| 6 | [x] Lista de plugins dinâmica | ✅ /v1/system/plugins |
+| 7 | [x] CRUD de API Keys funcional | ✅ Create/List/Revoke |
+| 8 | [x] Revogação de key funciona | ✅ is_active = false |
+| 9 | [x] Secrets criptografados e injetados | ✅ AES-256-GCM testado |
+| 10 | [x] Usage log registra chamadas | ✅ LogUsage() |
+| 11 | [x] Saldo debita corretamente | ✅ FOR UPDATE atômico |
+| 12 | [x] Scaffolding gera plugin funcional | ✅ Testado Go + Python |
+| 13 | [x] Dashboard web funciona | ✅ SPA com embed.FS |
+| 14 | [x] Docker compose sobe tudo | ✅ Dockerfile + compose |

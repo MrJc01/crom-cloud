@@ -23,6 +23,7 @@ import (
 	"github.com/crom/crom-cloud/core/internal/handlers"
 	"github.com/crom/crom-cloud/core/internal/server"
 	"github.com/crom/crom-cloud/core/internal/vault"
+	"github.com/crom/crom-cloud/core/web"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -146,6 +147,13 @@ func main() {
 	// Rotas de sistema (sem auth) — dispatcher leve sem billing/vault
 	sysDispatcher := gateway.NewSystemDispatcher(pluginManager)
 	router.Get("/v1/system/plugins", sysDispatcher.HandleListPlugins)
+	router.Get("/v1/system/health", func(w http.ResponseWriter, r *http.Request) {
+		server.WriteSuccess(w, map[string]interface{}{
+			"status":         "ok",
+			"version":        "0.1.0",
+			"active_plugins": len(pluginManager.ListPlugins()),
+		})
+	})
 	router.Get("/v1/system/health/plugins", func(w http.ResponseWriter, r *http.Request) {
 		server.WriteSuccess(w, healthMonitor.GetAllStatuses())
 	})
@@ -160,7 +168,11 @@ func main() {
 		r.Get("/v1/account/keys", keysHandler.List)
 		r.Delete("/v1/account/keys/{id}", keysHandler.Revoke)
 		r.Get("/v1/account/balance", billingHandler.GetBalance)
+		r.Get("/v1/account/credits", billingHandler.GetCredits)
+		r.Get("/v1/account/credits/history", billingHandler.GetCreditHistory)
 		r.Post("/v1/account/credits", billingHandler.AddCredits)
+		r.Get("/v1/account/usage", billingHandler.GetUsage)
+		r.Get("/v1/account/usage/summary", billingHandler.GetUsageSummary)
 		r.Post("/v1/account/secrets", billingHandler.SetSecret)
 		r.Get("/v1/account/secrets", billingHandler.ListSecrets)
 		r.Delete("/v1/account/secrets/{plugin}/{key}", billingHandler.DeleteSecret)
@@ -180,17 +192,10 @@ func main() {
 		dispatcher := gateway.NewDispatcher(pluginManager, secretStore, creditStore, healthMonitor)
 		dispatcher.RegisterRoutes(r)
 	})
-	// === Frontend SPA — serve arquivos estáticos ===
-	webDir := "./web"
-	staticFS := http.StripPrefix("/static/", http.FileServer(http.Dir(webDir+"/static")))
-	router.Get("/static/*", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Del("Content-Type") // Remove JSON default para estáticos
-		staticFS.ServeHTTP(w, r)
-	})
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFile(w, r, webDir+"/index.html")
-	})
+	// === Frontend SPA — embed.FS (embutido no binário) ===
+	webHandler := web.Handler()
+	router.Get("/static/*", webHandler.ServeHTTP)
+	router.Get("/", webHandler.ServeHTTP)
 
 
 

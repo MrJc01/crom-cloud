@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/mail"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -20,12 +19,9 @@ func SanitizeEmail(email string) (string, bool) {
 	if email == "" {
 		return "", false
 	}
-	_, err := net.ParseAddress(email)
-	if err != nil {
-		// Fallback: verificação básica
-		if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-			return "", false
-		}
+	// Verificação básica de formato
+	if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
+		return "", false
 	}
 	if len(email) > 254 {
 		return "", false

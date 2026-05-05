@@ -144,3 +144,145 @@ func (h *BillingHandler) DeleteSecret(w http.ResponseWriter, r *http.Request) {
 
 	server.WriteSuccess(w, map[string]string{"message": "Secret removido com sucesso"})
 }
+
+// GetCredits retorna o saldo de créditos com informações detalhadas.
+func (h *BillingHandler) GetCredits(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	balance, err := h.Credits.GetBalance(r.Context(), authCtx.DeveloperID)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	server.WriteSuccess(w, map[string]interface{}{
+		"balance":  balance,
+		"currency": "credits",
+	})
+}
+
+// GetCreditHistory retorna o histórico de transações de créditos.
+// Query params: ?type=debit|credit|refund&limit=50&offset=0
+func (h *BillingHandler) GetCreditHistory(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	txType := r.URL.Query().Get("type")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	history, err := h.Credits.GetCreditHistory(r.Context(), authCtx.DeveloperID, txType, limit, offset)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	server.WriteSuccess(w, map[string]interface{}{
+		"transactions": history,
+		"limit":        limit,
+		"offset":       offset,
+	})
+}
+
+// GetUsage retorna os logs de uso da API.
+// Query params: ?plugin=echo&from=2026-05-01&to=2026-05-05&limit=50&offset=0
+func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	pluginSlug := r.URL.Query().Get("plugin")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	var from, to *time.Time
+	if fromStr := r.URL.Query().Get("from"); fromStr != "" {
+		if t, err := time.Parse("2006-01-02", fromStr); err == nil {
+			from = &t
+		}
+	}
+	if toStr := r.URL.Query().Get("to"); toStr != "" {
+		if t, err := time.Parse("2006-01-02", toStr); err == nil {
+			endOfDay := t.Add(24*time.Hour - time.Second)
+			to = &endOfDay
+		}
+	}
+
+	logs, total, err := h.Credits.GetUsageLogs(r.Context(), authCtx.DeveloperID, pluginSlug, from, to, limit, offset)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	// Calcular totais
+	var totalCredits float64
+	for _, l := range logs {
+		totalCredits += l.CreditsCharged
+	}
+
+	server.WriteSuccess(w, map[string]interface{}{
+		"logs":           logs,
+		"total_records":  total,
+		"total_credits":  totalCredits,
+		"limit":          limit,
+		"offset":         offset,
+	})
+}
+
+// GetUsageSummary retorna o resumo mensal de uso agregado por plugin.
+func (h *BillingHandler) GetUsageSummary(w http.ResponseWriter, r *http.Request) {
+	authCtx := auth.GetAuthContext(r)
+	if authCtx == nil {
+		server.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Não autenticado")
+		return
+	}
+
+	// Default: mês corrente
+	now := time.Now()
+	from := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	to := from.AddDate(0, 1, 0).Add(-time.Second)
+
+	// Override com query params
+	if fromStr := r.URL.Query().Get("from"); fromStr != "" {
+		if t, err := time.Parse("2006-01-02", fromStr); err == nil {
+			from = t
+		}
+	}
+	if toStr := r.URL.Query().Get("to"); toStr != "" {
+		if t, err := time.Parse("2006-01-02", toStr); err == nil {
+			to = t.Add(24*time.Hour - time.Second)
+		}
+	}
+
+	summary, err := h.Credits.GetUsageSummary(r.Context(), authCtx.DeveloperID, from, to)
+	if err != nil {
+		server.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	var totalCalls int
+	var totalCredits float64
+	for _, s := range summary {
+		totalCalls += s.TotalCalls
+		totalCredits += s.TotalCredits
+	}
+
+	server.WriteSuccess(w, map[string]interface{}{
+		"period": map[string]string{
+			"from": from.Format("2006-01-02"),
+			"to":   to.Format("2006-01-02"),
+		},
+		"total_calls":   totalCalls,
+		"total_credits": totalCredits,
+		"by_plugin":     summary,
+	})
+}
