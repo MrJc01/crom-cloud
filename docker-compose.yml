@@ -1,4 +1,7 @@
-version: "3.8"
+# ══════════════════════════════════════════════════════
+# Crom Cloud — Docker/Podman Compose
+# Compatível com: docker-compose, podman-compose, docker compose
+# ══════════════════════════════════════════════════════
 
 services:
   core:
@@ -12,8 +15,8 @@ services:
       PORT: "8080"
       DATABASE_URL: "postgres://crom:crom_dev_2026@postgres:5432/crom_cloud?sslmode=disable"
       REDIS_URL: "redis:6379"
-      VAULT_KEY: "${VAULT_KEY}"
-      JWT_SECRET: "${JWT_SECRET}"
+      VAULT_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      JWT_SECRET: "crom-cloud-dev-jwt-secret-2026"
       PLUGINS_DIR: "./plugins"
       MIGRATIONS_DIR: "./migrations"
     depends_on:
@@ -26,7 +29,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     container_name: crom-cloud-db
     environment:
       POSTGRES_USER: crom
@@ -45,7 +48,7 @@ services:
       - crom-net
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     container_name: crom-cloud-redis
     ports:
       - "6379:6379"

@@ -100,6 +100,11 @@ curl -H "Authorization: Bearer crom_sk_live_7f3a8b2c..." \
 }
 ```
 
+### `GET /v1/system/health` — Status do Sistema
+```json
+{"success": true, "data": {"status": "ok", "version": "0.1.0", "active_plugins": 1}}
+```
+
 ### `GET /v1/system/plugins` — Listar Plugins Disponíveis
 ### `GET /v1/system/health/plugins` — Status de Saúde dos Plugins
 
@@ -209,8 +214,11 @@ Retorna histórico de uso com filtros.
 
 ### `POST /v1/account/secrets` — Cadastrar Secret
 ```json
-// Request
-{"plugin_slug": "ai", "secret_name": "openai_api_key", "secret_label": "Minha chave OpenAI", "value": "sk-proj-abc123..."}
+// Formato preferível
+{"plugin_slug": "ai", "secret_name": "openai_api_key", "value": "sk-proj-abc123..."}
+
+// Formato alternativo (também aceito)
+{"plugin": "ai", "key": "openai_api_key", "value": "sk-proj-abc123..."}
 ```
 
 ### `GET /v1/account/secrets` — Listar Secrets (sem valores)
@@ -228,41 +236,7 @@ Re-escaneia a pasta de plugins e atualiza o registry.
 
 ---
 
-## 7. Endpoints de Plugins (Dinâmicos)
 
-### `GET /v1/system/plugins` — Listar Plugins Disponíveis
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "slug": "dns",
-      "name": "DNS Manager",
-      "version": "1.0.0",
-      "status": "active",
-      "credit_cost": 1,
-      "required_secrets": ["cloudflare_api_key"],
-      "routes": [
-        {"method": "GET", "path": "/zones", "scope": "read"},
-        {"method": "POST", "path": "/records", "scope": "write"}
-      ]
-    }
-  ]
-}
-```
-
-### Rotas de Plugin (Geradas Dinamicamente)
-```text
-# Formato: /v1/{plugin_slug}/{action_path}
-GET    /v1/dns/zones          → Listar zonas DNS
-POST   /v1/dns/records        → Criar registro DNS
-POST   /v1/ai/generate        → Gerar texto via LLM
-GET    /v1/ai/models          → Listar modelos disponíveis
-POST   /v1/storage/upload     → Upload de arquivo
-GET    /v1/scraper/extract    → Scrape de URL
-```
-
----
 
 ## Documentos Relacionados
 

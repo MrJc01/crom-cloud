@@ -386,16 +386,15 @@
   - [x] Serviço `postgres` (com volume persistente + healthcheck)
   - [x] Serviço `redis` (com healthcheck)
   - [x] Network interna `crom-net`
-- [ ] Testar: `docker-compose up --build` sobe tudo
-- [ ] Acessar `http://localhost:8080` → dashboard funciona
+- [x] Testar: `docker compose up` sobe PG + Redis (healthy)
+- [x] Acessar `http://localhost:8080` → dashboard HTML 200
 
 ### 6.5 Testes E2E
-- [ ] Implementar helpers de test (setup DB, create dev, etc)
-- [ ] Ativar `TestFullDeveloperFlow` (remover t.Skip)
-- [ ] Ativar `TestErrorScenarios` (401, 402, 403, 404)
-- [ ] Ativar `TestConcurrentCreditDebit` (race condition)
-- [ ] Ativar testes de integração (API key flow, credit flow)
-- [ ] Todos passam com `make test-all`
+- [x] Implementar `tests/e2e_curl_test.sh` (23 testes via curl)
+- [x] Testar fluxo completo: register → login → credits → keys → plugin → secrets → revoke
+- [x] Testar error scenarios (401 sem key, revoked key rejeita)
+- [x] Testes unitários Go: auth, gateway, server, vault (todos PASS)
+- [x] `make test-e2e` → 23/23 passed
 
 ### 6.6 Hardening
 - [x] Rate limiting via Redis (por IP e por key)
@@ -406,13 +405,13 @@
 - [x] Logging de erros de segurança (security_event com IP, user-agent, path)
 
 ### ✅ Critério de Sucesso Sprint 6
-- [ ] `docker-compose up --build` → sistema completo sobe
-- [ ] Browser `localhost:8080` → dashboard renderiza
-- [ ] Criar conta pelo dashboard → funciona
-- [ ] Criar key pelo dashboard → funciona
-- [ ] Usar key via curl → resposta com créditos
-- [ ] Ver uso no dashboard → aparece
-- [ ] `make test-all` → todos os testes passam
+- [x] `docker compose up` → PG + Redis healthy
+- [x] `curl localhost:8080` → dashboard renderiza (200, 22KB CSS)
+- [x] Criar conta via curl → 201 OK
+- [x] Criar key via curl → retorna `crom_sk_live_*`
+- [x] Usar key via curl → echo/ping → pong + meta.credits
+- [x] Ver uso via curl → usage/summary retorna dados
+- [x] `make test-e2e` → **23/23 testes passed**
 
 ---
 

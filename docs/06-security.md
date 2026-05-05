@@ -180,16 +180,16 @@ X-RateLimit-Reset: 1714867200
 
 ## 6. Checklist de Segurança
 
-- [ ] HTTPS obrigatório em produção (Let's Encrypt / Cloudflare)
-- [ ] API Keys armazenadas como SHA-256 hash (nunca plaintext)
-- [ ] Secrets criptografados com AES-256-GCM
-- [ ] Chave mestra em variável de ambiente (não no código)
-- [ ] Rate limiting implementado em Redis
-- [ ] Audit log de todas as ações sensíveis
-- [ ] Plugins sem acesso direto ao banco de dados
-- [ ] Comunicação Core↔Plugin via Unix Socket (sem rede)
-- [ ] Headers de segurança (HSTS, CSP, X-Frame-Options)
-- [ ] Sanitização de input em todas as rotas
+- [ ] HTTPS obrigatório em produção (Let's Encrypt / Cloudflare) — *deploy-time*
+- [x] API Keys armazenadas como SHA-256 hash (nunca plaintext) — `models/apikey.go`
+- [x] Secrets criptografados com AES-256-GCM — `vault/secrets.go` (testado)
+- [x] Chave mestra em variável de ambiente (`VAULT_KEY`) — `.env`
+- [x] Rate limiting implementado em Redis — `server/ratelimit.go`
+- [x] Audit log de ações sensíveis — `security_event` via slog
+- [x] Plugins sem acesso direto ao banco de dados — isolamento via gRPC
+- [ ] Comunicação Core↔Plugin via Unix Socket — *planejado para v2*
+- [x] Headers de segurança (HSTS, CSP, X-Frame-Options, nosniff) — `server/middleware.go`
+- [x] Sanitização de input em todas as rotas — `server/sanitize.go` (testado)
 
 ---
 

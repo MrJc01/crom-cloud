@@ -105,10 +105,8 @@ func main() {
 		slog.Info("Redis conectado")
 	}
 
-	// Criar router com middlewares de segurança
+	// Criar router (middlewares de segurança incluídos no NewRouter)
 	router := server.NewRouter()
-	router.Use(server.SecurityHeadersMiddleware)
-	router.Use(server.MaxBodySizeMiddleware(10 << 20)) // 10MB max body
 
 	// Rate limiting por IP via Redis
 	rateLimiter := server.NewRateLimiter(rdb, 1000) // 1000 req/min por IP
@@ -196,6 +194,9 @@ func main() {
 	webHandler := web.Handler()
 	router.Get("/static/*", webHandler.ServeHTTP)
 	router.Get("/", webHandler.ServeHTTP)
+
+	// SPA catch-all: rotas como /dashboard, /keys retornam index.html
+	router.NotFound(webHandler.ServeHTTP)
 
 
 

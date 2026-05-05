@@ -80,20 +80,30 @@ func (h *BillingHandler) SetSecret(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Plugin string `json:"plugin"`
-		Key    string `json:"key"`
-		Value  string `json:"value"`
+		Plugin     string `json:"plugin"`
+		PluginSlug string `json:"plugin_slug"` // alias
+		Key        string `json:"key"`
+		SecretName string `json:"secret_name"` // alias
+		Value      string `json:"value"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		server.WriteError(w, http.StatusBadRequest, "INVALID_JSON", "JSON inválido")
 		return
 	}
-	if req.Plugin == "" || req.Key == "" || req.Value == "" {
+	plugin := req.Plugin
+	if plugin == "" {
+		plugin = req.PluginSlug
+	}
+	key := req.Key
+	if key == "" {
+		key = req.SecretName
+	}
+	if plugin == "" || key == "" || req.Value == "" {
 		server.WriteError(w, http.StatusBadRequest, "MISSING_FIELDS", "plugin, key e value são obrigatórios")
 		return
 	}
 
-	if err := h.Vault.SetSecret(r.Context(), authCtx.DeveloperID, req.Plugin, req.Key, req.Value); err != nil {
+	if err := h.Vault.SetSecret(r.Context(), authCtx.DeveloperID, plugin, key, req.Value); err != nil {
 		server.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
 		return
 	}

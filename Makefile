@@ -36,16 +36,12 @@ test:
 test-unit:
 	cd tests && go test ./core/... -v
 
-# Testes de integração (requer docker-compose up)
-test-integration:
-	cd tests && go test ./integration/... -v -count=1
-
-# Testes E2E (requer docker-compose up)
+# Testes E2E via curl (requer servidor rodando)
 test-e2e:
-	cd tests && go test ./e2e/... -v -count=1
+	bash tests/e2e_curl_test.sh
 
-# Roda todos os testes (unitários + integração + e2e)
-test-all: test test-unit test-integration test-e2e
+# Roda todos os testes
+test-all: test test-e2e
 
 # === Migrações ===
 

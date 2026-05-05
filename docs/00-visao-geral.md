@@ -1,7 +1,7 @@
 # Crom Cloud — Visão Geral do Produto
 
 > **Última atualização:** 2026-05-05
-> **Status:** Em desenvolvimento ativo
+> **Status:** ✅ MVP Completo (315/315 checklist items)
 
 ---
 

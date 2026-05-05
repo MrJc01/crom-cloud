@@ -36,8 +36,9 @@ func (h *KeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Label       string `json:"label"`
 		Permissions []struct {
-			Plugin string `json:"plugin"`
-			Scope  string `json:"scope"`
+			PluginSlug string `json:"plugin_slug"`
+			Plugin     string `json:"plugin"` // fallback
+			Scope      string `json:"scope"`
 		} `json:"permissions"`
 		RateLimit int `json:"rate_limit,omitempty"`
 	}
@@ -54,12 +55,16 @@ func (h *KeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var perms []models.KeyPermission
 	for _, p := range req.Permissions {
+		slug := p.PluginSlug
+		if slug == "" {
+			slug = p.Plugin // fallback
+		}
 		scope := p.Scope
 		if scope == "" {
 			scope = "read"
 		}
 		perms = append(perms, models.KeyPermission{
-			PluginSlug: p.Plugin,
+			PluginSlug: slug,
 			Scope:      scope,
 		})
 	}

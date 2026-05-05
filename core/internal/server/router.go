@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,9 +23,8 @@ func NewRouter() *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(CORSMiddleware)
 	r.Use(ContentTypeJSON)
-
-	// Rotas de sistema (públicas)
-	r.Get("/v1/system/health", HealthHandler)
+	r.Use(SecurityHeadersMiddleware)
+	r.Use(MaxBodySizeMiddleware(10 << 20)) // 10MB max body
 
 	return r
 }
@@ -90,9 +90,15 @@ func CORSMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ContentTypeJSON força Content-Type application/json em todas as respostas.
+// ContentTypeJSON força Content-Type application/json para rotas de API.
+// Rotas do frontend (/, /static/*) são excluídas.
 func ContentTypeJSON(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if path == "/" || strings.HasPrefix(path, "/static/") {
+			next.ServeHTTP(w, r)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(w, r)
 	})

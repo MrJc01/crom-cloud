@@ -1,7 +1,12 @@
-# Binários
-plugins/**/*.bin
+# Binários compilados
 core/crom-cloud
+plugins/echo/echo
+plugins/**/*.bin
 *.exe
+
+# Frontend embed (cópia gerada por make sync-web)
+core/web/index.html
+core/web/static/
 
 # Dependências
 vendor/
@@ -25,5 +30,8 @@ Thumbs.db
 dist/
 tmp/
 
-# Protobuf gerado (opcional — pode comitar)
+# Artefatos de sessão
+implementation_plan.md
+
+# Protobuf gerado (comitado — não ignorar)
 # core/proto/*.pb.go

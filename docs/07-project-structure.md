@@ -76,7 +76,12 @@ crom-cloud/
 │   │   └── plugin_grpc.pb.go           # Gerado: protoc --go-grpc_out
 │   │
 │   ├── go.mod
-│   └── go.sum
+│   ├── go.sum
+│   │
+│   └── web/                              # Frontend embed.FS (embutido no binário)
+│       ├── embed.go                      # Handler HTTP que serve SPA
+│       ├── index.html                    # Cópia de web/index.html
+│       └── static/                       # Cópia de web/static/
 │
 ├── plugins/                               # ══ PLUGINS ATIVOS ══
 │   │                                      # (Core escaneia ao iniciar)
@@ -122,11 +127,12 @@ crom-cloud/
 │
 ├── tests/                                 # ══ TESTES ══
 │   ├── README.md
+│   ├── e2e_curl_test.sh                  # 23 testes E2E via curl (make test-e2e)
 │   ├── run_all.sh                        # Script runner completo
 │   ├── docker-compose.test.yml          # Infra para testes
-│   ├── core/                             # Testes unitários do Core
+│   ├── core/                             # Testes unitários do Core (Go)
 │   ├── integration/                      # Testes de integração
-│   ├── e2e/                              # Testes end-to-end
+│   ├── e2e/                              # Testes end-to-end (Go)
 │   └── plugins/                          # Testes de plugins
 │
 ├── tools/                                 # Scripts de automação
