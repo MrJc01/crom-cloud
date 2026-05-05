@@ -1,120 +1,86 @@
-// Crom Cloud — API Keys Management
-
+// Crom Cloud — API Keys Page
 Router.register('/keys', async (app) => {
   try {
     if (!API.user) { const me = await API.me(); API.user = me.data; }
-    const keysRes = await API.listKeys();
-    const pluginsRes = await API.listPlugins();
-    const keys = keysRes.data || [];
-    const plugins = pluginsRes.data || [];
+    const res = await API.listKeys();
+    const keys = res.data || [];
+    const plugins = (await API.listPlugins()).data || [];
+
+    const badge = (text, color) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600;background:${color}15;color:${color};">${text}</span>`;
+    const tag = (text) => `<span style="display:inline-block;padding:2px 8px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.12);color:#818cf8;border-radius:4px;margin-right:4px;">${text}</span>`;
+    const th = (t) => `<th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(255,255,255,0.06);">${t}</th>`;
 
     app.innerHTML = dashboardLayout('API Keys', `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;" class="anim-fade">
         <div>
-          <p style="color:var(--text-secondary)">Gerencie suas API Keys para acessar os plugins via API.</p>
+          <p style="font-size:14px;color:#64748b;">Gerencie suas API Keys para acessar os plugins via API.</p>
         </div>
-        <button class="btn btn-primary" id="btnNewKey">+ Nova API Key</button>
+        ${UI.btn(`${I('plus','w-4 h-4')} Nova API Key`, 'primary', 'onclick="keysPage.showCreate()"')}
       </div>
-
-      <div class="table-container">
-        <table>
-          <thead><tr><th>Label</th><th>Prefixo</th><th>Permissões</th><th>Rate Limit</th><th>Último Uso</th><th>Status</th><th>Ações</th></tr></thead>
-          <tbody id="keysBody">
-            ${keys.map(k => `<tr>
-              <td><strong>${k.label}</strong></td>
-              <td style="font-family:monospace;font-size:0.8rem;color:var(--text-muted)">${k.key_prefix}...</td>
-              <td>${(k.permissions||[]).map(p => `<span class="doc-tag">${p.plugin_slug}:${p.scope}</span>`).join(' ')}</td>
-              <td>${k.rate_limit_rpm} rpm</td>
-              <td style="color:var(--text-muted);font-size:0.85rem">${k.last_used_at ? new Date(k.last_used_at).toLocaleString('pt-BR') : '—'}</td>
-              <td>${k.is_active ? '<span class="badge badge-active">● Ativa</span>' : '<span class="badge badge-inactive">Revogada</span>'}</td>
-              <td>${k.is_active ? `<button class="btn btn-danger btn-sm" onclick="revokeKey('${k.id}')">Revogar</button>` : ''}</td>
-            </tr>`).join('')}
-            ${keys.length === 0 ? '<tr><td colspan="7"><div class="empty-state"><div class="icon">🔑</div><h3>Nenhuma API Key</h3><p>Crie sua primeira key para começar</p></div></td></tr>' : ''}
+      <div style="background:linear-gradient(135deg,rgba(26,34,51,0.8),rgba(17,24,39,0.9));border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;" class="anim-fade">
+        <div style="padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#64748b;">${I('search','w-4 h-4')}</span>
+            <input type="text" style="width:100%;padding:10px 16px 10px 40px;background:#0f1520;border:1px solid rgba(255,255,255,0.06);border-radius:8px;font-size:13px;color:#e2e8f0;outline:none;font-family:Inter,sans-serif;" placeholder="Buscar..." onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='rgba(255,255,255,0.06)'" onkeyup="document.querySelectorAll('#keys-table tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(this.value.toLowerCase())?'':'none')">
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;" id="keys-table">
+          <thead><tr>${th('Label')}${th('Prefixo')}${th('Permissões')}${th('Rate Limit')}${th('Último Uso')}${th('Status')}${th('Ações')}</tr></thead>
+          <tbody>
+            ${keys.length > 0 ? keys.map(k => `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
+              <td style="padding:12px 20px;font-size:13px;font-weight:600;">${UI.esc(k.label)}</td>
+              <td style="padding:12px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#64748b;">${k.key_prefix}...</td>
+              <td style="padding:12px 20px;">${(k.permissions||[]).map(p => tag(p.plugin_slug+':'+p.scope)).join('')}</td>
+              <td style="padding:12px 20px;font-size:13px;color:#94a3b8;">${k.rate_limit || '100/min'}</td>
+              <td style="padding:12px 20px;font-size:13px;color:#94a3b8;">${UI.relTime(k.last_used_at)}</td>
+              <td style="padding:12px 20px;">${k.is_active ? badge('● Ativa','#22c55e') : badge('Revogada','#ef4444')}</td>
+              <td style="padding:12px 20px;">${k.is_active ? `<button style="padding:6px 12px;border-radius:6px;background:rgba(239,68,68,0.08);border:none;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;" onclick="keysPage.revoke('${k.id}','${UI.esc(k.label)}')">Revogar</button>` : ''}</td>
+            </tr>`).join('') : `<tr><td colspan="7" style="text-align:center;padding:48px;">
+              <div style="color:#475569;margin-bottom:12px;">${I('key','w-10 h-10')}</div>
+              <div style="font-weight:600;color:#94a3b8;">Nenhuma API Key</div>
+              <div style="font-size:13px;color:#64748b;">Crie sua primeira key para começar</div>
+            </td></tr>`}
           </tbody>
         </table>
       </div>
-
-      <div id="newKeyModal" style="display:none"></div>
-    `, 'keys');
-
-    // New Key modal
-    document.getElementById('btnNewKey').onclick = () => {
-      document.getElementById('newKeyModal').style.display = 'block';
-      document.getElementById('newKeyModal').innerHTML = `
-        <div class="modal-overlay" onclick="if(event.target===this)document.getElementById('newKeyModal').style.display='none'">
-          <div class="modal">
-            <h2>🔑 Nova API Key</h2>
-            <form id="createKeyForm">
-              <div class="form-group">
-                <label>Label</label>
-                <input type="text" class="form-input" id="keyLabel" placeholder="Minha key de produção" required>
-              </div>
-              <div class="form-group">
-                <label>Permissões</label>
-                ${plugins.map(p => `
-                  <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;padding:0.5rem;background:var(--bg-secondary);border-radius:var(--radius-xs)">
-                    <input type="checkbox" id="perm_${p.slug}" checked>
-                    <label for="perm_${p.slug}" style="flex:1;margin:0;cursor:pointer">${p.name} (${p.slug})</label>
-                    <select id="scope_${p.slug}" class="form-input" style="width:100px;padding:0.3rem 0.5rem">
-                      <option value="read">read</option>
-                      <option value="write" selected>write</option>
-                      <option value="admin">admin</option>
-                    </select>
-                  </div>
-                `).join('')}
-                <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.5rem;padding:0.5rem;background:var(--bg-secondary);border-radius:var(--radius-xs)">
-                  <input type="checkbox" id="perm_wildcard">
-                  <label for="perm_wildcard" style="flex:1;margin:0;cursor:pointer">Todos os plugins futuros (*)</label>
-                  <select id="scope_wildcard" class="form-input" style="width:100px;padding:0.3rem 0.5rem">
-                    <option value="read" selected>read</option>
-                    <option value="write">write</option>
-                  </select>
-                </div>
-              </div>
-              <div style="display:flex;gap:0.75rem;margin-top:1rem">
-                <button type="submit" class="btn btn-primary" style="flex:1">Criar Key</button>
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('newKeyModal').style.display='none'">Cancelar</button>
-              </div>
-            </form>
-          </div>
-        </div>`;
-
-      document.getElementById('createKeyForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const perms = [];
-        plugins.forEach(p => {
-          if (document.getElementById('perm_' + p.slug)?.checked) {
-            perms.push({ plugin: p.slug, scope: document.getElementById('scope_' + p.slug).value });
-          }
-        });
-        if (document.getElementById('perm_wildcard')?.checked) {
-          perms.push({ plugin: '*', scope: document.getElementById('scope_wildcard').value });
-        }
-        try {
-          const res = await API.createKey(document.getElementById('keyLabel').value, perms);
-          document.getElementById('newKeyModal').innerHTML = `
-            <div class="modal-overlay">
-              <div class="modal">
-                <h2>✅ Key Criada!</h2>
-                <p style="color:var(--warning);margin-bottom:1rem;font-weight:600">⚠️ Copie agora! Esta key não será mostrada novamente.</p>
-                <div class="key-display">
-                  <span id="rawKeyVal">${res.data.key}</span>
-                  <button class="copy-btn" onclick="navigator.clipboard.writeText('${res.data.key}');toast('Copiada!')">Copiar</button>
-                </div>
-                <button class="btn btn-primary" style="width:100%;margin-top:1.5rem" onclick="Router.navigate('/keys')">Fechar</button>
-              </div>
-            </div>`;
-        } catch (err) { toast(err.message, 'error'); }
-      };
-    };
+    `, 'keys', [{label:'Dashboard',action:"Router.navigate('/dashboard')"},{label:'API Keys'}]);
   } catch (err) { toast(err.message, 'error'); }
 });
 
-async function revokeKey(id) {
-  if (!confirm('Tem certeza que deseja revogar esta key?')) return;
-  try {
-    await API.revokeKey(id);
-    toast('Key revogada com sucesso');
-    Router.navigate('/keys');
-  } catch (err) { toast(err.message, 'error'); }
-}
+const keysPage = {
+  showCreate() {
+    const el = document.createElement('div');
+    el.innerHTML = UI.modal(`${I('key','w-5 h-5')} Nova API Key`, `
+      ${UI.input('key-label', 'Nome da Key', { placeholder: 'Ex: Production Key', required: true })}
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#94a3b8;">Permissões</label>
+        <div id="key-perms" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        <p style="font-size:12px;color:#64748b;margin-top:6px;">As permissões serão configuradas por plugin disponível.</p>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+        ${UI.btn('Cancelar', 'secondary', 'onclick="document.getElementById(\'modal\').remove()"')}
+        ${UI.btn(`${I('plus','w-4 h-4')} Criar Key`, 'primary', 'onclick="keysPage.create()"')}
+      </div>`);
+    document.body.appendChild(el.firstElementChild);
+  },
+  async create() {
+    const label = document.getElementById('key-label')?.value;
+    if (!label) return toast('Informe o nome da key', 'error');
+    try {
+      const res = await API.createKey(label, [{ plugin_slug: 'echo', scope: 'write' }]);
+      document.getElementById('modal')?.remove();
+      const keyModal = document.createElement('div');
+      keyModal.innerHTML = UI.modal(`${I('check-circle','w-5 h-5')} Key Criada!`, `
+        <p style="font-size:14px;color:#f59e0b;margin-bottom:16px;display:flex;align-items:center;gap:8px;">${I('alert-triangle','w-4 h-4')} Copie agora — esta key não será exibida novamente.</p>
+        ${UI.keyDisplay(res.data.key)}
+        <div style="text-align:right;margin-top:20px;">${UI.btn('Fechar', 'secondary', 'onclick="document.getElementById(\'modal\').remove();Router.navigate(\'/keys\')"')}</div>`);
+      document.body.appendChild(keyModal.firstElementChild);
+    } catch (err) { toast(err.message, 'error'); }
+  },
+  async revoke(id, label) {
+    const modal = UI.confirm('Revogar Key', `Tem certeza que deseja revogar a key "${label}"? Esta ação é irreversível.`);
+    document.getElementById('confirm-action-btn').onclick = async () => {
+      try { await API.revokeKey(id); modal.remove(); toast('Key revogada!'); Router.navigate('/keys'); } catch (e) { toast(e.message, 'error'); }
+    };
+  },
+};

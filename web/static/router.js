@@ -1,4 +1,4 @@
-// Crom Cloud — SPA Router
+// Crom Cloud — SPA Router (Refactored)
 const Router = {
   routes: {},
   current: null,
@@ -6,14 +6,16 @@ const Router = {
   register(path, handler) { this.routes[path] = handler; },
 
   async navigate(path) {
-    // Guard: rotas de dashboard requerem auth
-    const dashRoutes = ['/dashboard', '/keys', '/billing', '/secrets'];
-    if (dashRoutes.some(r => path.startsWith(r)) && !API.isAuth()) {
+    // Auth guard
+    const protectedRoutes = ['/dashboard', '/keys', '/billing', '/secrets', '/settings', '/activity'];
+    if (protectedRoutes.some(r => path.startsWith(r)) && !API.isAuth()) {
       return this.navigate('/login');
     }
+
     this.current = path;
     window.history.pushState({}, '', '#' + path);
     const app = document.getElementById('app');
+
     // Match route
     const route = Object.keys(this.routes).find(r => {
       if (r === path) return true;
@@ -23,14 +25,41 @@ const Router = {
       }
       return false;
     });
+
     if (route) {
       const params = {};
       const rParts = route.split('/'), pParts = path.split('/');
       rParts.forEach((p, i) => { if (p.startsWith(':')) params[p.slice(1)] = pParts[i]; });
-      app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--text-muted)">Carregando...</div>';
-      try { await this.routes[route](app, params); } catch (e) { console.error(e); }
+
+      // Loading state with skeleton
+      app.innerHTML = `<div class="flex items-center justify-center min-h-screen">
+        <div class="flex flex-col items-center gap-3 text-slate-500">
+          ${I('loader', 'w-8 h-8 anim-spin text-crom-500')}
+          <span class="text-sm">Carregando...</span>
+        </div>
+      </div>`;
+
+      try {
+        await this.routes[route](app, params);
+      } catch (e) {
+        console.error('Router error:', e);
+        app.innerHTML = `<div class="flex items-center justify-center min-h-screen">
+          <div class="text-center anim-fade">
+            <div class="mb-4 text-red-400">${I('alert-circle', 'w-12 h-12 mx-auto')}</div>
+            <h2 class="text-xl font-bold mb-2">Erro ao carregar</h2>
+            <p class="text-sm text-slate-500 mb-4">${UI.esc(e.message)}</p>
+            ${UI.btn(`${I('arrow-left','w-4 h-4')} Tentar novamente`, 'primary', `onclick="Router.navigate('${path}')"`)}
+          </div>
+        </div>`;
+      }
     } else {
-      app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh"><h1>404</h1></div>';
+      app.innerHTML = `<div class="flex items-center justify-center min-h-screen anim-fade">
+        <div class="text-center">
+          <div class="text-8xl font-black text-crom-500/20 mb-4">404</div>
+          <h2 class="text-xl font-bold mb-2">Página não encontrada</h2>
+          <p class="text-sm text-slate-500 mb-6">A rota <code class="px-2 py-0.5 bg-surface-card rounded text-crom-400">${path}</code> não existe.</p>
+          ${UI.btn(`${I('arrow-left','w-4 h-4')} Voltar ao início`, 'primary', `onclick="Router.navigate('/')"`)}</div>
+      </div>`;
     }
   },
 
@@ -43,59 +72,3 @@ const Router = {
     this.navigate(path);
   }
 };
-
-// Helpers
-function toast(msg, type = 'success') {
-  let c = document.querySelector('.toast-container');
-  if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); }
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${msg}</span>`;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 4000);
-}
-
-function dashboardLayout(title, content, activeNav = '') {
-  const user = API.user || { name: 'User', email: '', plan: 'free' };
-  const initial = (user.name || 'U')[0].toUpperCase();
-  return `
-  <div class="dashboard">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo-icon">C</div>
-        <div class="logo-text">Crom Cloud<small>API Gateway</small></div>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section">
-          <div class="nav-section-title">Geral</div>
-          <a class="nav-item ${activeNav==='dashboard'?'active':''}" onclick="Router.navigate('/dashboard')">📊 Overview</a>
-          <a class="nav-item ${activeNav==='plugins'?'active':''}" onclick="Router.navigate('/plugins')">🧩 Plugins</a>
-          <a class="nav-item ${activeNav==='docs'?'active':''}" onclick="Router.navigate('/docs')">📚 Documentação</a>
-        </div>
-        <div class="nav-section">
-          <div class="nav-section-title">Conta</div>
-          <a class="nav-item ${activeNav==='keys'?'active':''}" onclick="Router.navigate('/keys')">🔑 API Keys</a>
-          <a class="nav-item ${activeNav==='billing'?'active':''}" onclick="Router.navigate('/billing')">💳 Créditos</a>
-          <a class="nav-item ${activeNav==='secrets'?'active':''}" onclick="Router.navigate('/secrets')">🔒 Secrets</a>
-        </div>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="user-avatar">${initial}</div>
-        <div class="user-info">
-          <div class="name">${user.name}</div>
-          <div class="plan">${user.plan} plan</div>
-        </div>
-        <a onclick="API.clearToken(); Router.navigate('/')" style="cursor:pointer;color:var(--text-muted)" title="Sair">⏻</a>
-      </div>
-    </aside>
-    <div class="main-content">
-      <header class="top-bar">
-        <h1>${title}</h1>
-        <div class="top-bar-actions">
-          <span style="color:var(--text-muted);font-size:0.85rem">${user.email}</span>
-        </div>
-      </header>
-      <div class="content-area">${content}</div>
-    </div>
-  </div>`;
-}

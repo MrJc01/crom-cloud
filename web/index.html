@@ -4,15 +4,109 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Crom Cloud — API Gateway SaaS unificado para todas as suas ferramentas de infraestrutura e cloud.">
+  <meta property="og:title" content="Crom Cloud — Unified API Gateway">
+  <meta property="og:description" content="Gateway unificado para cloud, infraestrutura e desenvolvimento.">
+  <meta property="og:type" content="website">
   <title>Crom Cloud — Unified API Gateway</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%236366f1'/><stop offset='100%25' stop-color='%238b5cf6'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='68' font-family='Inter,sans-serif' font-size='55' font-weight='900' fill='white' text-anchor='middle'>C</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-crom-50: #eef2ff;
+      --color-crom-100: #e0e7ff;
+      --color-crom-200: #c7d2fe;
+      --color-crom-300: #a5b4fc;
+      --color-crom-400: #818cf8;
+      --color-crom-500: #6366f1;
+      --color-crom-600: #4f46e5;
+      --color-crom-700: #4338ca;
+      --color-crom-800: #3730a3;
+      --color-crom-900: #312e81;
+      --color-surface-primary: #0a0e17;
+      --color-surface-secondary: #111827;
+      --color-surface-card: #1a2233;
+      --color-surface-hover: #1f2b3d;
+      --color-surface-active: #253044;
+      --color-surface-input: #0f1520;
+      --color-surface-border: #2a3548;
+      --color-surface-border-hover: #3b4f6b;
+      --color-success: #22c55e;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
+      --color-info: #3b82f6;
+    }
+  </style>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0e17;
+      color: #f1f5f9;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    code, .font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    ::selection { background: rgba(99,102,241,0.3); color: white; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3548; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b4f6b; }
+    *:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; border-radius: 4px; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeInDown { from { opacity:0; transform:translateY(-12px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideInRight { from { opacity:0; transform:translateX(50px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+    @keyframes glowPulse { 0%,100% { box-shadow:0 0 20px rgba(99,102,241,0.1); } 50% { box-shadow:0 0 40px rgba(99,102,241,0.3); } }
+    @keyframes countUp { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }
+    @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+    @keyframes drawLine { from { stroke-dashoffset:1000; } to { stroke-dashoffset:0; } }
+    @keyframes barGrow { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+    @keyframes heroGlow { 0%,100% { transform:scale(1) rotate(0deg); } 50% { transform:scale(1.1) rotate(3deg); } }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .anim-fade { animation: fadeIn 0.4s ease-out both; }
+    .anim-fade-down { animation: fadeInDown 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .anim-slide-up { animation: slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .anim-slide-right { animation: slideInRight 0.3s ease-out both; }
+    .anim-scale { animation: scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .anim-glow { animation: glowPulse 3s ease-in-out infinite; }
+    .anim-count { animation: countUp 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .anim-shimmer { animation: shimmer 1.5s ease-in-out infinite; }
+    .anim-float { animation: float 6s ease-in-out infinite; }
+    .anim-hero { animation: heroGlow 15s ease infinite; }
+    .anim-spin { animation: spin 1s linear infinite; }
+    .anim-draw { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.5s ease-out forwards; }
+    .anim-grow { transform-origin: bottom; animation: barGrow 0.8s ease-out both; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
   <script src="/static/api.js"></script>
+  <script src="/static/components/icons.js"></script>
+  <script src="/static/components/ui.js"></script>
+  <script src="/static/components/sidebar.js"></script>
+  <script src="/static/components/topbar.js"></script>
+  <script src="/static/components/command-palette.js"></script>
+  <script src="/static/components/charts.js"></script>
   <script src="/static/router.js"></script>
   <script src="/static/pages/home.js"></script>
   <script src="/static/pages/auth.js"></script>
@@ -22,6 +116,8 @@
   <script src="/static/pages/secrets.js"></script>
   <script src="/static/pages/plugins.js"></script>
   <script src="/static/pages/docs.js"></script>
+  <script src="/static/pages/settings.js"></script>
+  <script src="/static/pages/activity.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

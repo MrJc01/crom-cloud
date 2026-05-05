@@ -28,14 +28,14 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 
-		// CSP básica — permite 'self' + CDNs comuns para fontes e ícones
+		// CSP — permite 'self' + CDNs para TailwindCSS, Lucide, fontes
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
-				"script-src 'self' 'unsafe-inline'; "+
-				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
+				"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "+
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "+
 				"font-src 'self' https://fonts.gstatic.com; "+
 				"img-src 'self' data:; "+
-				"connect-src 'self'")
+				"connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com")
 
 		next.ServeHTTP(w, r)
 	})

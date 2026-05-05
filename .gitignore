@@ -1,6 +1,17 @@
 # Binários compilados
+/crom-cloud
+/echo
 core/crom-cloud
 plugins/echo/echo
+plugins/**/[!.]*
+!plugins/**/manifest.json
+!plugins/**/main.go
+!plugins/**/handler.go
+!plugins/**/bridge.go
+!plugins/**/go.mod
+!plugins/**/go.sum
+!plugins/**/Makefile
+!plugins/**/scripts/
 plugins/**/*.bin
 *.exe
 
@@ -32,6 +43,12 @@ tmp/
 
 # Artefatos de sessão
 implementation_plan.md
+
+# Monitor runtime files
+monitor/tmp/*
+monitor/logs/*
+!monitor/tmp/.gitkeep
+!monitor/logs/.gitkeep
 
 # Protobuf gerado (comitado — não ignorar)
 # core/proto/*.pb.go
