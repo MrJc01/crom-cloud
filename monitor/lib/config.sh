@@ -212,28 +212,71 @@ config_plugins_menu() {
 
     echo -e "  ${BOLD}Plugins instalados:${NC}"
     ui_separator
+    
+    # Pegar os plugins desabilitados do .env
+    local disabled_str=""
+    if grep -q "^DISABLED_PLUGINS=" "$PROJECT_ROOT/.env"; then
+        disabled_str=$(grep "^DISABLED_PLUGINS=" "$PROJECT_ROOT/.env" | cut -d= -f2-)
+    fi
+
+    local plugin_slugs=()
+    local i=1
+
     for manifest in "$PROJECT_ROOT/plugins/"*/manifest.json; do
         [ -f "$manifest" ] || continue
         local slug=$(basename "$(dirname "$manifest")")
+        plugin_slugs+=("$slug")
+
         local name version
         name=$(grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' "$manifest" | head -1 | cut -d'"' -f4)
         version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$manifest" | head -1 | cut -d'"' -f4)
         local has_bin="${RED}✗${NC}"
         [ -f "$(dirname "$manifest")/$slug" ] && has_bin="${GREEN}✓${NC}"
-        printf "  ${ICON_PLUG}  %-20s %-20s v%-8s [bin: %b]\n" "$slug" "${name:-$slug}" "${version:-?}" "$has_bin"
+        
+        local status="${GREEN}ON${NC}"
+        if [[ ",$disabled_str," == *",$slug,"* ]]; then
+            status="${RED}OFF${NC}"
+        fi
+        
+        printf "  ${GREEN}%2d${NC}) ${ICON_PLUG}  %-20s %-20s v%-8s [bin: %b] [status: %b]\n" "$i" "$slug" "${name:-$slug}" "${version:-?}" "$has_bin" "$status"
+        i=$((i + 1))
     done
     ui_separator
     echo ""
 
-    echo -e "  ${GREEN}1${NC}) Criar novo plugin"
-    echo -e "  ${GREEN}2${NC}) Rebuild plugins"
+    echo -e "  ${CYAN}c${NC}) Criar novo plugin"
+    echo -e "  ${CYAN}b${NC}) Rebuild plugins"
     echo -e "  ${DIM}0) Voltar${NC}"
     echo ""
-    echo -ne "  ${BOLD}Escolha:${NC} "
+    echo -ne "  ${BOLD}Escolha (número para alternar status):${NC} "
     read -r choice
 
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -gt 0 ] && [ "$choice" -le "${#plugin_slugs[@]}" ]; then
+        local t_slug="${plugin_slugs[$((choice - 1))]}"
+        if grep -q "^DISABLED_PLUGINS=" "$PROJECT_ROOT/.env"; then
+            current=$(grep "^DISABLED_PLUGINS=" "$PROJECT_ROOT/.env" | cut -d= -f2-)
+            if [[ ",$current," == *",$t_slug,"* ]]; then
+                new_val=$(echo "$current" | sed -e "s/\b$t_slug\b//g" -e 's/,,/,/g' -e 's/^,//' -e 's/,$//')
+                sed -i "s|^DISABLED_PLUGINS=.*|DISABLED_PLUGINS=${new_val}|" "$PROJECT_ROOT/.env"
+                ui_success "Plugin '$t_slug' HABILITADO."
+            else
+                new_val="${current},${t_slug}"
+                new_val=$(echo "$new_val" | sed 's/^,//')
+                sed -i "s|^DISABLED_PLUGINS=.*|DISABLED_PLUGINS=${new_val}|" "$PROJECT_ROOT/.env"
+                ui_success "Plugin '$t_slug' DESABILITADO."
+            fi
+        else
+            echo "DISABLED_PLUGINS=$t_slug" >> "$PROJECT_ROOT/.env"
+            ui_success "Plugin '$t_slug' DESABILITADO."
+        fi
+        ui_warn "Aviso: Após suas edições, use a opção 'r' no menu principal para reiniciar e aplicar no servidor."
+        sleep 2
+        config_plugins_menu # reload menu visualmente
+        return
+    fi
+
     case "$choice" in
-        1)
+        c|C)
             echo -ne "  ${BOLD}Slug (kebab-case):${NC} "
             read -r new_slug
             if [ -n "$new_slug" ]; then
@@ -242,7 +285,7 @@ config_plugins_menu() {
                 bash "$PROJECT_ROOT/tools/create-plugin.sh" "$new_slug" --lang="${new_lang:-go}"
             fi
             ;;
-        2) build_plugins ;;
+        b|B) build_plugins ;;
         0|"") return ;;
     esac
 }

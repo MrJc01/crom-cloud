@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-hclog"
@@ -46,13 +47,25 @@ func NewPluginManager(pluginsDir string) *PluginManager {
 }
 
 // Discover escaneia a pasta de plugins, carrega manifests e inicia os binários.
-func (pm *PluginManager) Discover() error {
+func (pm *PluginManager) Discover(disabledPlugins string) error {
 	manifests, errs := DiscoverManifests(pm.pluginsDir)
 	for _, err := range errs {
 		slog.Warn("erro ao carregar plugin", "error", err)
 	}
 
+	// Criar map de plugins desativados globalmente via .env
+	disabledMap := make(map[string]bool)
+	if disabledPlugins != "" {
+		for _, slug := range strings.Split(disabledPlugins, ",") {
+			disabledMap[strings.TrimSpace(slug)] = true
+		}
+	}
+
 	for _, m := range manifests {
+		if disabledMap[m.Slug] {
+			m.Status = "disabled" // Força o status para desabilitado
+		}
+
 		if m.Status == "disabled" {
 			// Apenas armazena no map para o ListPlugins, mas sem cliente ativo
 			pm.mu.Lock()

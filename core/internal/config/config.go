@@ -16,8 +16,9 @@ type Config struct {
 	RedisURL      string `envconfig:"REDIS_URL" default:"localhost:6379"`
 	VaultKeyHex   string `envconfig:"VAULT_KEY" required:"true"`
 	JWTSecret     string `envconfig:"JWT_SECRET" required:"true"`
-	PluginsDir    string `envconfig:"PLUGINS_DIR" default:"./plugins"`
-	MigrationsDir string `envconfig:"MIGRATIONS_DIR" default:"./migrations"`
+	PluginsDir      string `envconfig:"PLUGINS_DIR" default:"./plugins"`
+	MigrationsDir   string `envconfig:"MIGRATIONS_DIR" default:"./migrations"`
+	DisabledPlugins string `envconfig:"DISABLED_PLUGINS" default:""`
 }
 
 // VaultKey retorna a chave do cofre como bytes (32 bytes para AES-256).

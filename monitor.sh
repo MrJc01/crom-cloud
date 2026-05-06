@@ -54,6 +54,7 @@ fi
 # ── Parse de argumentos CLI ──────────────────────────────────
 CLI_COMMAND=""
 CLI_PROFILE=""
+CLI_ARGS=()
 
 for arg in "$@"; do
     case "$arg" in

@@ -29,11 +29,20 @@ Router.register('/plugins', async (app) => {
 
       const renderPluginCard = (p) => {
         const isEnabled = enabledSlugs.includes(p.slug);
-        const borderColor = isEnabled ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)';
-        const hoverColor = isEnabled ? '#22c55e' : '#818cf8';
-        const iconColor = isEnabled ? '#22c55e' : '#a78bfa';
-        const bgIconColor = isEnabled ? 'rgba(34,197,94,0.1)' : 'rgba(167,139,250,0.1)';
+        const isDisabledGlobally = p.status === 'disabled' || p.status === 'maintenance';
         
+        const borderColor = isDisabledGlobally ? 'rgba(239,68,68,0.3)' : (isEnabled ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)');
+        const hoverColor = isDisabledGlobally ? '#ef4444' : (isEnabled ? '#22c55e' : '#818cf8');
+        const iconColor = isDisabledGlobally ? '#ef4444' : (isEnabled ? '#22c55e' : '#a78bfa');
+        const bgIconColor = isDisabledGlobally ? 'rgba(239,68,68,0.1)' : (isEnabled ? 'rgba(34,197,94,0.1)' : 'rgba(167,139,250,0.1)');
+        
+        let statusBadge = '';
+        if (isDisabledGlobally) {
+          statusBadge = `<div style="background:rgba(239,68,68,0.1);color:#ef4444;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> Desabilitado</div>`;
+        } else if (isEnabled) {
+          statusBadge = `<div style="background:rgba(34,197,94,0.1);color:#22c55e;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;">${I('check','w-3 h-3')} Habilitado</div>`;
+        }
+
         return `
         <div style="background:linear-gradient(135deg,rgba(26,34,51,0.8),rgba(17,24,39,0.9));border:1px solid ${borderColor};border-radius:14px;padding:20px;transition:all 0.3s;cursor:pointer;" onmouseover="this.style.borderColor='${hoverColor}';this.style.boxShadow='0 8px 30px rgba(0,0,0,0.3)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='${borderColor}';this.style.boxShadow='';this.style.transform=''" onclick="Router.navigate('/plugins/${p.slug}')">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
@@ -42,7 +51,7 @@ Router.register('/plugins', async (app) => {
               <div style="font-weight:700;font-size:16px;">${UI.esc(p.name)}</div>
               <div style="font-size:12px;color:#64748b;">v${p.version}</div>
             </div>
-            ${isEnabled ? `<div style="background:rgba(34,197,94,0.1);color:#22c55e;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;">${I('check','w-3 h-3')} Habilitado</div>` : ''}
+            ${statusBadge}
           </div>
           <p style="font-size:13px;color:#94a3b8;margin-bottom:16px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${UI.esc(p.description || 'Integração oficial Crom Cloud.')}</p>
           <div style="display:flex;gap:8px;align-items:center;">
@@ -54,7 +63,7 @@ Router.register('/plugins', async (app) => {
 
       // Separamos os habilitados dos não habilitados (catálogo geral)
       const enabledPluginsList = plugins.filter(p => enabledSlugs.includes(p.slug));
-      const catalogPluginsList = plugins.filter(p => !enabledSlugs.includes(p.slug) && p.status === 'active');
+      const catalogPluginsList = plugins.filter(p => !enabledSlugs.includes(p.slug));
 
       const content = `
         <div class="anim-fade">

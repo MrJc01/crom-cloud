@@ -177,11 +177,11 @@ Router.register('/plugins/:slug', async (app, params) => {
           <!-- Header -->
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:20px;padding:32px;">
             <div style="display:flex;gap:24px;">
-              <div style="width:80px;height:80px;border-radius:20px;background:${bgIconColor};display:flex;align-items:center;justify-content:center;color:${iconColor};">${I('puzzle','w-10 h-10')}</div>
+              <div style="width:80px;height:80px;border-radius:20px;background:${plugin.status === 'disabled' ? 'rgba(239,68,68,0.1)' : 'rgba(167,139,250,0.1)'};display:flex;align-items:center;justify-content:center;color:${plugin.status === 'disabled' ? '#ef4444' : '#a78bfa'};">${I('puzzle','w-10 h-10')}</div>
               <div>
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
                   <h1 style="font-size:28px;font-weight:900;">${UI.esc(plugin.name)}</h1>
-                  ${isEnabled ? `<span style="background:rgba(34,197,94,0.1);color:#22c55e;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px;">${I('check','w-3 h-3')} Habilitado</span>` : ''}
+                  ${plugin.status === 'disabled' ? `<span style="background:rgba(239,68,68,0.1);color:#ef4444;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px;"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> Desabilitado pelo Sistema</span>` : (isEnabled ? `<span style="background:rgba(34,197,94,0.1);color:#22c55e;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px;">${I('check','w-3 h-3')} Habilitado</span>` : '')}
                 </div>
                 <div style="font-size:14px;color:#64748b;margin-bottom:16px;font-family:monospace;">ID: ${plugin.slug} · v${plugin.version}</div>
                 <p style="color:#cbd5e1;font-size:16px;line-height:1.6;max-width:600px;">${UI.esc(plugin.description || 'Nenhuma descrição detalhada fornecida para este plugin.')}</p>
@@ -192,9 +192,12 @@ Router.register('/plugins/:slug', async (app, params) => {
                 <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Custo por Requisição</div>
                 <div style="font-size:24px;font-weight:800;color:#fff;">${plugin.credit_cost === 0 ? 'Grátis' : plugin.credit_cost + ' cr'}</div>
               </div>
-              ${isEnabled ? 
-                `<button onclick="window.toggleCurrentPlugin('disable')" style="background:transparent;border:1px solid #ef4444;color:#ef4444;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">Desabilitar API</button>` :
-                `<button onclick="window.toggleCurrentPlugin('enable')" style="background:#22c55e;border:none;color:white;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:0.2s;box-shadow:0 4px 14px rgba(34,197,94,0.3);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(34,197,94,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(34,197,94,0.3)'">Habilitar API</button>`
+              ${plugin.status === 'disabled' ? 
+                `<div style="color:#ef4444;font-size:13px;font-weight:600;padding:8px 12px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2);">Indisponível Temporariamente</div>` :
+                (isEnabled ? 
+                  `<button onclick="window.toggleCurrentPlugin('disable')" style="background:transparent;border:1px solid #ef4444;color:#ef4444;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">Desabilitar API</button>` :
+                  `<button onclick="window.toggleCurrentPlugin('enable')" style="background:#22c55e;border:none;color:white;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:0.2s;box-shadow:0 4px 14px rgba(34,197,94,0.3);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(34,197,94,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(34,197,94,0.3)'">Habilitar API</button>`
+                )
               }
             </div>
           </div>

@@ -115,7 +115,7 @@ func main() {
 
 	// Plugin Discovery
 	pluginManager := gateway.NewPluginManager(cfg.PluginsDir)
-	if err := pluginManager.Discover(); err != nil {
+	if err := pluginManager.Discover(cfg.DisabledPlugins); err != nil {
 		slog.Error("erro no plugin discovery", "error", err)
 	}
 	defer pluginManager.Shutdown()
