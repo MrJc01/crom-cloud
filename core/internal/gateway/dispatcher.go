@@ -191,20 +191,62 @@ func (d *Dispatcher) HandlePluginRequest(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// Extrair restrições granulares da API Key
+	permissionsMetadata := make(map[string]string)
+	if authCtx != nil {
+		for _, p := range authCtx.Permissions {
+			if p.PluginSlug == slug || p.PluginSlug == "*" {
+				if p.ResourceID != nil {
+					// Guardar recursos permitidos mapeados pelo scope (read, write)
+					if existing := permissionsMetadata[p.Scope]; existing != "" {
+						permissionsMetadata[p.Scope] = existing + "," + *p.ResourceID
+					} else {
+						permissionsMetadata[p.Scope] = *p.ResourceID
+					}
+				}
+			}
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	// Roteamento para UI (Apenas leitura/renderização de interface)
+	if strings.HasPrefix(action, "ui/") || action == "ui" {
+		uiReq := &pb.UIRequest{
+			Path:        strings.TrimPrefix(action, "ui/"),
+			DeveloperId: developerID,
+		}
+		uiResp, err := plugin.Service.GetUI(ctx, uiReq)
+		if err != nil {
+			slog.Error("erro ao chamar GetUI do plugin", "slug", slug, "error", err)
+			server.WriteError(w, http.StatusBadGateway, "UI_ERROR", "Erro ao carregar interface do plugin: "+err.Error())
+			return
+		}
+		if uiResp.StatusCode != 0 && uiResp.StatusCode >= 400 {
+			server.WriteError(w, int(uiResp.StatusCode), "UI_NOT_FOUND", "Página/Schema não encontrado no plugin")
+			return
+		}
+		
+		w.Header().Set("Content-Type", uiResp.ContentType)
+		w.WriteHeader(http.StatusOK)
+		w.Write(uiResp.Content)
+		return
+	}
+
 	// Montar ActionRequest com TODOS os campos preenchidos
 	req := &pb.ActionRequest{
-		Action:      action,
-		Method:      r.Method,
-		Payload:     payload,
-		Headers:     extractHeaders(r),
-		Secrets:     secrets,
-		DeveloperId: developerID,
-		QueryParams: queryParams,
+		Action:              action,
+		Method:              r.Method,
+		Payload:             payload,
+		Headers:             extractHeaders(r),
+		Secrets:             secrets,
+		DeveloperId:         developerID,
+		QueryParams:         queryParams,
+		PermissionsMetadata: permissionsMetadata,
 	}
 
 	// Chamar plugin via gRPC
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
 
 	resp, err := plugin.Service.ExecuteAction(ctx, req)
 	if err != nil {
@@ -328,6 +370,7 @@ func (d *Dispatcher) HandleListPlugins(w http.ResponseWriter, r *http.Request) {
 		Description     string       `json:"description"`
 		Icon            string       `json:"icon"`
 		Status          string       `json:"status"`
+		UIType          string       `json:"ui_type"`
 		CreditCost      int          `json:"credit_cost"`
 		RequiredSecrets []SecretSpec `json:"required_secrets"`
 		Documentation   PluginDoc    `json:"documentation"`
@@ -343,6 +386,7 @@ func (d *Dispatcher) HandleListPlugins(w http.ResponseWriter, r *http.Request) {
 			Description:     m.Description,
 			Icon:            m.Icon,
 			Status:          m.Status,
+			UIType:          m.UIType,
 			CreditCost:      m.Billing.CreditCost,
 			RequiredSecrets: m.RequiredSecrets,
 			Documentation:   m.Documentation,

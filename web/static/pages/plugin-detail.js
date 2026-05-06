@@ -202,6 +202,19 @@ Router.register('/plugins/:slug', async (app, params) => {
             </div>
           </div>
 
+          ${isAuth && isEnabled && plugin.ui_type && plugin.ui_type !== 'none' && plugin.status !== 'disabled' ? `
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:20px 24px;margin-bottom:32px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;color:#818cf8;">${I('settings','w-5 h-5')}</div>
+              <div>
+                <div style="font-weight:700;font-size:14px;">Painel de Controle</div>
+                <div style="color:#94a3b8;font-size:12px;">Gerencie recursos, dados e configurações internas deste plugin.</div>
+              </div>
+            </div>
+            <button onclick="Router.navigate('/plugins/${slug}/admin')" style="background:#6366f1;border:none;color:white;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;transition:0.2s;box-shadow:0 4px 14px rgba(99,102,241,0.3);display:flex;align-items:center;gap:6px;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(99,102,241,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(99,102,241,0.3)'">${I('layout','w-4 h-4')} Abrir Painel</button>
+          </div>
+          ` : ''}
+
           <!-- Documentation & Endpoints -->
           <div style="display:grid;grid-template-columns:300px 1fr;gap:48px;">
             <div>

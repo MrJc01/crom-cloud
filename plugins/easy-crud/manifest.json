@@ -1,0 +1,137 @@
+{
+  "slug": "easy-crud",
+  "name": "Easy CRUD",
+  "version": "1.0.0",
+  "description": "Crie tabelas e APIs REST dinâmicas via interface. Controle granular de acesso por API Key permite definir quais tabelas cada chave pode ler ou escrever.",
+  "icon": "database",
+  "status": "active",
+  "ui_type": "schema",
+  "runtime": {
+    "binary": "./easy-crud",
+    "language": "go",
+    "health_check_interval": "30s"
+  },
+  "billing": {
+    "model": "per_call",
+    "credit_cost": 1,
+    "premium_actions": {
+      "tables/create": 5,
+      "tables/drop": 5
+    }
+  },
+  "required_secrets": [],
+  "documentation": {
+    "overview": "O Easy CRUD fornece um backend-as-a-service minimalista dentro do Crom Cloud. Crie tabelas dinâmicas, insira registros e consulte dados — tudo via API. Ideal para protótipos rápidos, dashboards internas e integrações que precisam de persistência sem gerenciar banco de dados.",
+    "use_cases": [
+      "Prototipar um MVP sem configurar banco de dados",
+      "Criar uma API de formulários para landing pages",
+      "Backend de dashboards internas com controle de acesso granular",
+      "Armazenar configurações de aplicações de forma estruturada"
+    ],
+    "getting_started": "1. Habilite o plugin no seu Workspace. 2. Acesse o Painel de Controle para criar tabelas via interface gráfica. 3. Crie API Keys com resource_id restrito a tabelas específicas."
+  },
+  "api_routes": [
+    {
+      "method": "GET",
+      "path": "/tables",
+      "description": "Lista todas as tabelas do developer",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna uma lista com nome e schema de todas as tabelas criadas pelo developer autenticado.",
+        "request_body": null,
+        "response_example": {
+          "tables": [
+            {"name": "users", "columns": ["id", "name", "email"], "row_count": 42},
+            {"name": "posts", "columns": ["id", "title", "body", "user_id"], "row_count": 128}
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/tables/create",
+      "description": "Cria uma nova tabela dinâmica",
+      "scope": "admin",
+      "documentation": {
+        "summary": "Cria uma tabela com o nome e colunas especificados. Cada developer tem namespace isolado.",
+        "request_body": {
+          "name": "products",
+          "columns": [
+            {"name": "title", "type": "string"},
+            {"name": "price", "type": "number"},
+            {"name": "active", "type": "boolean"}
+          ]
+        },
+        "response_example": {
+          "message": "Tabela 'products' criada com sucesso",
+          "table": "products",
+          "columns": ["id", "title", "price", "active", "created_at"]
+        },
+        "errors": [
+          {"code": 409, "message": "Tabela já existe"}
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/tables/drop",
+      "description": "Remove uma tabela e todos os seus dados",
+      "scope": "admin",
+      "documentation": {
+        "summary": "Remove permanentemente uma tabela e todos os registros associados. Esta ação é irreversível.",
+        "request_body": {
+          "name": "products"
+        },
+        "response_example": {
+          "message": "Tabela 'products' removida com sucesso"
+        },
+        "errors": [
+          {"code": 404, "message": "Tabela não encontrada"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/data/:table",
+      "description": "Lista registros de uma tabela",
+      "scope": "read",
+      "documentation": {
+        "summary": "Retorna todos os registros da tabela especificada. Respeita as restrições de resource_id da API Key.",
+        "request_body": null,
+        "response_example": {
+          "table": "users",
+          "rows": [
+            {"id": 1, "name": "Alice", "email": "alice@example.com"},
+            {"id": 2, "name": "Bob", "email": "bob@example.com"}
+          ],
+          "total": 2
+        },
+        "errors": [
+          {"code": 403, "message": "API Key não tem permissão para acessar esta tabela"}
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/data/:table",
+      "description": "Insere um registro na tabela",
+      "scope": "write",
+      "documentation": {
+        "summary": "Insere um novo registro na tabela especificada. Respeita restrições granulares de resource_id.",
+        "request_body": {
+          "name": "Alice",
+          "email": "alice@example.com"
+        },
+        "response_example": {
+          "message": "Registro inserido",
+          "id": 1,
+          "table": "users"
+        },
+        "errors": [
+          {"code": 403, "message": "API Key não tem permissão de escrita para esta tabela"}
+        ]
+      }
+    }
+  ]
+}

@@ -38,6 +38,15 @@ func (h *Handler) HealthCheck(ctx context.Context, _ *pb.Empty) (*pb.HealthRespo
 	}, nil
 }
 
+// GetUI retorna a interface do plugin (não suportado por padrão neste plugin)
+func (h *Handler) GetUI(ctx context.Context, req *pb.UIRequest) (*pb.UIResponse, error) {
+	return &pb.UIResponse{
+		StatusCode: 404,
+		ContentType: "application/json",
+		Content: []byte(`{"error": "Plugin UI not implemented"}`),
+	}, nil
+}
+
 // ExecuteAction processa as ações do plugin.
 func (h *Handler) ExecuteAction(ctx context.Context, req *pb.ActionRequest) (*pb.ActionResponse, error) {
 	switch req.Action {

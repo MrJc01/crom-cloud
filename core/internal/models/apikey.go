@@ -33,6 +33,7 @@ type KeyPermission struct {
 	APIKeyID   uuid.UUID `json:"api_key_id"`
 	PluginSlug string    `json:"plugin_slug"`
 	Scope      string    `json:"scope"`
+	ResourceID *string   `json:"resource_id,omitempty"` // Recurso opcional (ex: tabela no db, bucket no storage)
 }
 
 // APIKeyStore gerencia operações de API Key no banco.
@@ -88,8 +89,8 @@ func (s *APIKeyStore) Generate(ctx context.Context, devID uuid.UUID, label strin
 	// Inserir permissões
 	for _, perm := range permissions {
 		_, err := tx.Exec(ctx,
-			`INSERT INTO key_permissions (api_key_id, plugin_slug, scope) VALUES ($1, $2, $3)`,
-			key.ID, perm.PluginSlug, perm.Scope,
+			`INSERT INTO key_permissions (api_key_id, plugin_slug, scope, resource_id) VALUES ($1, $2, $3, $4)`,
+			key.ID, perm.PluginSlug, perm.Scope, perm.ResourceID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao inserir permissão: %w", err)
@@ -119,7 +120,7 @@ func (s *APIKeyStore) FindByHash(ctx context.Context, keyHash string) (*APIKey, 
 
 	// Carregar permissões
 	rows, err := s.DB.Query(ctx,
-		`SELECT id, api_key_id, plugin_slug, scope FROM key_permissions WHERE api_key_id = $1`, key.ID)
+		`SELECT id, api_key_id, plugin_slug, scope, resource_id FROM key_permissions WHERE api_key_id = $1`, key.ID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao carregar permissões: %w", err)
 	}
@@ -127,7 +128,7 @@ func (s *APIKeyStore) FindByHash(ctx context.Context, keyHash string) (*APIKey, 
 
 	for rows.Next() {
 		var perm KeyPermission
-		rows.Scan(&perm.ID, &perm.APIKeyID, &perm.PluginSlug, &perm.Scope)
+		rows.Scan(&perm.ID, &perm.APIKeyID, &perm.PluginSlug, &perm.Scope, &perm.ResourceID)
 		key.Permissions = append(key.Permissions, perm)
 	}
 
@@ -151,10 +152,10 @@ func (s *APIKeyStore) ListByDeveloper(ctx context.Context, devID uuid.UUID) ([]A
 
 		// Carregar permissões para cada key
 		permRows, _ := s.DB.Query(ctx,
-			`SELECT id, api_key_id, plugin_slug, scope FROM key_permissions WHERE api_key_id = $1`, k.ID)
+			`SELECT id, api_key_id, plugin_slug, scope, resource_id FROM key_permissions WHERE api_key_id = $1`, k.ID)
 		for permRows.Next() {
 			var perm KeyPermission
-			permRows.Scan(&perm.ID, &perm.APIKeyID, &perm.PluginSlug, &perm.Scope)
+			permRows.Scan(&perm.ID, &perm.APIKeyID, &perm.PluginSlug, &perm.Scope, &perm.ResourceID)
 			k.Permissions = append(k.Permissions, perm)
 		}
 		permRows.Close()
@@ -205,8 +206,8 @@ func (s *APIKeyStore) UpdateKey(ctx context.Context, keyID, devID uuid.UUID, lab
 	// Inserir novas permissões
 	for _, perm := range permissions {
 		_, err := tx.Exec(ctx,
-			`INSERT INTO key_permissions (api_key_id, plugin_slug, scope) VALUES ($1, $2, $3)`,
-			keyID, perm.PluginSlug, perm.Scope,
+			`INSERT INTO key_permissions (api_key_id, plugin_slug, scope, resource_id) VALUES ($1, $2, $3, $4)`,
+			keyID, perm.PluginSlug, perm.Scope, perm.ResourceID,
 		)
 		if err != nil {
 			return fmt.Errorf("erro ao inserir nova permissão: %w", err)

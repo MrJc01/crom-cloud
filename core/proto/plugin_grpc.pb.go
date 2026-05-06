@@ -22,6 +22,7 @@ const (
 	CromPlugin_GetManifest_FullMethodName   = "/cromcloud.CromPlugin/GetManifest"
 	CromPlugin_HealthCheck_FullMethodName   = "/cromcloud.CromPlugin/HealthCheck"
 	CromPlugin_ExecuteAction_FullMethodName = "/cromcloud.CromPlugin/ExecuteAction"
+	CromPlugin_GetUI_FullMethodName         = "/cromcloud.CromPlugin/GetUI"
 )
 
 // CromPluginClient is the client API for CromPlugin service.
@@ -36,6 +37,8 @@ type CromPluginClient interface {
 	HealthCheck(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*HealthResponse, error)
 	// Executa uma ação do plugin.
 	ExecuteAction(ctx context.Context, in *ActionRequest, opts ...grpc.CallOption) (*ActionResponse, error)
+	// Retorna os dados/assets de UI do plugin (Schema JSON ou Iframe HTML)
+	GetUI(ctx context.Context, in *UIRequest, opts ...grpc.CallOption) (*UIResponse, error)
 }
 
 type cromPluginClient struct {
@@ -76,6 +79,16 @@ func (c *cromPluginClient) ExecuteAction(ctx context.Context, in *ActionRequest,
 	return out, nil
 }
 
+func (c *cromPluginClient) GetUI(ctx context.Context, in *UIRequest, opts ...grpc.CallOption) (*UIResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UIResponse)
+	err := c.cc.Invoke(ctx, CromPlugin_GetUI_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CromPluginServer is the server API for CromPlugin service.
 // All implementations must embed UnimplementedCromPluginServer
 // for forward compatibility.
@@ -88,6 +101,8 @@ type CromPluginServer interface {
 	HealthCheck(context.Context, *Empty) (*HealthResponse, error)
 	// Executa uma ação do plugin.
 	ExecuteAction(context.Context, *ActionRequest) (*ActionResponse, error)
+	// Retorna os dados/assets de UI do plugin (Schema JSON ou Iframe HTML)
+	GetUI(context.Context, *UIRequest) (*UIResponse, error)
 	mustEmbedUnimplementedCromPluginServer()
 }
 
@@ -106,6 +121,9 @@ func (UnimplementedCromPluginServer) HealthCheck(context.Context, *Empty) (*Heal
 }
 func (UnimplementedCromPluginServer) ExecuteAction(context.Context, *ActionRequest) (*ActionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExecuteAction not implemented")
+}
+func (UnimplementedCromPluginServer) GetUI(context.Context, *UIRequest) (*UIResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUI not implemented")
 }
 func (UnimplementedCromPluginServer) mustEmbedUnimplementedCromPluginServer() {}
 func (UnimplementedCromPluginServer) testEmbeddedByValue()                    {}
@@ -182,6 +200,24 @@ func _CromPlugin_ExecuteAction_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CromPlugin_GetUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UIRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CromPluginServer).GetUI(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CromPlugin_GetUI_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CromPluginServer).GetUI(ctx, req.(*UIRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CromPlugin_ServiceDesc is the grpc.ServiceDesc for CromPlugin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +236,10 @@ var CromPlugin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecuteAction",
 			Handler:    _CromPlugin_ExecuteAction_Handler,
+		},
+		{
+			MethodName: "GetUI",
+			Handler:    _CromPlugin_GetUI_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

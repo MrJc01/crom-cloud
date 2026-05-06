@@ -36,9 +36,10 @@ func (h *KeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Label       string `json:"label"`
 		Permissions []struct {
-			PluginSlug string `json:"plugin_slug"`
-			Plugin     string `json:"plugin"` // fallback
-			Scope      string `json:"scope"`
+			PluginSlug string  `json:"plugin_slug"`
+			Plugin     string  `json:"plugin"` // fallback
+			Scope      string  `json:"scope"`
+			ResourceID *string `json:"resource_id,omitempty"`
 		} `json:"permissions"`
 		RateLimit int `json:"rate_limit,omitempty"`
 	}
@@ -66,6 +67,7 @@ func (h *KeysHandler) Create(w http.ResponseWriter, r *http.Request) {
 		perms = append(perms, models.KeyPermission{
 			PluginSlug: slug,
 			Scope:      scope,
+			ResourceID: p.ResourceID,
 		})
 	}
 
@@ -147,8 +149,9 @@ func (h *KeysHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Label       string `json:"label,omitempty"`
 		Permissions []struct {
-			PluginSlug string `json:"plugin_slug"`
-			Scope      string `json:"scope"`
+			PluginSlug string  `json:"plugin_slug"`
+			Scope      string  `json:"scope"`
+			ResourceID *string `json:"resource_id,omitempty"`
 		} `json:"permissions"`
 	}
 
@@ -171,6 +174,7 @@ func (h *KeysHandler) Update(w http.ResponseWriter, r *http.Request) {
 		perms = append(perms, models.KeyPermission{
 			PluginSlug: p.PluginSlug,
 			Scope:      scope,
+			ResourceID: p.ResourceID,
 		})
 	}
 

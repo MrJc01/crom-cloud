@@ -1,0 +1,15 @@
+═══════════════════════════════════════
+  Crom Cloud — API Gateway v0.1.0
+═══════════════════════════════════════
+2026/05/06 00:06:22 INFO configuração carregada port=8080 plugins_dir=../plugins
+2026/05/06 00:06:22 INFO PostgreSQL conectado
+2026/05/06 00:06:22 ERROR falha ao inicializar migrações source="file:///home/j/Área de trabalho/migrations" error="failed to open source, \"file:///home/j/Área de trabalho/migrations\": open .: no such file or directory"
+2026/05/06 00:06:22 INFO Redis conectado
+2026/05/06 00:06:22 WARN erro ao carregar plugin error="erro ao ler diretório de plugins ../plugins: open ../plugins: no such file or directory"
+2026/05/06 00:06:22 INFO discovery completo plugins_ativos=0
+2026/05/06 00:06:22 INFO vault inicializado (AES-256-GCM)
+2026/05/06 00:06:22 INFO health monitor iniciado interval=30s
+2026/05/06 00:06:22 INFO servidor iniciado addr=http://localhost:8080
+2026/05/06 00:06:47 INFO sinal recebido, encerrando... signal=terminated
+2026/05/06 00:06:47 INFO servidor encerrado com sucesso
+2026/05/06 00:06:47 INFO health monitor encerrado

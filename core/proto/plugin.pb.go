@@ -65,6 +65,7 @@ type Manifest struct {
 	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Icon          string                 `protobuf:"bytes,5,opt,name=icon,proto3" json:"icon,omitempty"`
 	Routes        []*RouteInfo           `protobuf:"bytes,6,rep,name=routes,proto3" json:"routes,omitempty"`
+	UiType        string                 `protobuf:"bytes,7,opt,name=ui_type,json=uiType,proto3" json:"ui_type,omitempty"` // "schema", "iframe", "none"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -141,6 +142,13 @@ func (x *Manifest) GetRoutes() []*RouteInfo {
 	return nil
 }
 
+func (x *Manifest) GetUiType() string {
+	if x != nil {
+		return x.UiType
+	}
+	return ""
+}
+
 type RouteInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Method        string                 `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"` // GET, POST, PUT, DELETE
@@ -202,16 +210,17 @@ func (x *RouteInfo) GetScope() string {
 }
 
 type ActionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        string                 `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`                                                                                                        // Nome da rota/ação solicitada
-	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`                                                                                                        // HTTP method original
-	Payload       []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`                                                                                                      // Body da requisição (JSON)
-	Headers       map[string]string      `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                            // Headers HTTP relevantes
-	Secrets       map[string]string      `protobuf:"bytes,5,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                            // Tokens injetados pelo Core (do cofre)
-	DeveloperId   string                 `protobuf:"bytes,6,opt,name=developer_id,json=developerId,proto3" json:"developer_id,omitempty"`                                                                           // ID do desenvolvedor autenticado
-	QueryParams   map[string]string      `protobuf:"bytes,7,rep,name=query_params,json=queryParams,proto3" json:"query_params,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Query string parameters
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Action              string                 `protobuf:"bytes,1,opt,name=action,proto3" json:"action,omitempty"`                                                                                                                                // Nome da rota/ação solicitada
+	Method              string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`                                                                                                                                // HTTP method original
+	Payload             []byte                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`                                                                                                                              // Body da requisição (JSON)
+	Headers             map[string]string      `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                                                    // Headers HTTP relevantes
+	Secrets             map[string]string      `protobuf:"bytes,5,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                                                    // Tokens injetados pelo Core (do cofre)
+	DeveloperId         string                 `protobuf:"bytes,6,opt,name=developer_id,json=developerId,proto3" json:"developer_id,omitempty"`                                                                                                   // ID do desenvolvedor autenticado
+	QueryParams         map[string]string      `protobuf:"bytes,7,rep,name=query_params,json=queryParams,proto3" json:"query_params,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`                         // Query string parameters
+	PermissionsMetadata map[string]string      `protobuf:"bytes,8,rep,name=permissions_metadata,json=permissionsMetadata,proto3" json:"permissions_metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // Restrições granulares da API Key (ex: resource_id)
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ActionRequest) Reset() {
@@ -289,6 +298,13 @@ func (x *ActionRequest) GetDeveloperId() string {
 func (x *ActionRequest) GetQueryParams() map[string]string {
 	if x != nil {
 		return x.QueryParams
+	}
+	return nil
+}
+
+func (x *ActionRequest) GetPermissionsMetadata() map[string]string {
+	if x != nil {
+		return x.PermissionsMetadata
 	}
 	return nil
 }
@@ -405,23 +421,136 @@ func (x *HealthResponse) GetMessage() string {
 	return ""
 }
 
+type UIRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                  // Caminho solicitado na UI (ex: "/", "/schema.json", "/assets/app.js")
+	DeveloperId   string                 `protobuf:"bytes,2,opt,name=developer_id,json=developerId,proto3" json:"developer_id,omitempty"` // Quem está requisitando
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UIRequest) Reset() {
+	*x = UIRequest{}
+	mi := &file_plugin_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UIRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UIRequest) ProtoMessage() {}
+
+func (x *UIRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UIRequest.ProtoReflect.Descriptor instead.
+func (*UIRequest) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UIRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *UIRequest) GetDeveloperId() string {
+	if x != nil {
+		return x.DeveloperId
+	}
+	return ""
+}
+
+type UIResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ContentType   string                 `protobuf:"bytes,1,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"` // ex: "application/json", "text/html"
+	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	StatusCode    int32                  `protobuf:"varint,3,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"` // ex: 200, 404
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UIResponse) Reset() {
+	*x = UIResponse{}
+	mi := &file_plugin_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UIResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UIResponse) ProtoMessage() {}
+
+func (x *UIResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_plugin_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UIResponse.ProtoReflect.Descriptor instead.
+func (*UIResponse) Descriptor() ([]byte, []int) {
+	return file_plugin_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UIResponse) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *UIResponse) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *UIResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
 var File_plugin_proto protoreflect.FileDescriptor
 
 const file_plugin_proto_rawDesc = "" +
 	"\n" +
 	"\fplugin.proto\x12\tcromcloud\"\a\n" +
-	"\x05Empty\"\xb0\x01\n" +
+	"\x05Empty\"\xc9\x01\n" +
 	"\bManifest\x12\x12\n" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x12\n" +
 	"\x04icon\x18\x05 \x01(\tR\x04icon\x12,\n" +
-	"\x06routes\x18\x06 \x03(\v2\x14.cromcloud.RouteInfoR\x06routes\"M\n" +
+	"\x06routes\x18\x06 \x03(\v2\x14.cromcloud.RouteInfoR\x06routes\x12\x17\n" +
+	"\aui_type\x18\a \x01(\tR\x06uiType\"M\n" +
 	"\tRouteInfo\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
-	"\x05scope\x18\x03 \x01(\tR\x05scope\"\x84\x04\n" +
+	"\x05scope\x18\x03 \x01(\tR\x05scope\"\xb2\x05\n" +
 	"\rActionRequest\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12\x18\n" +
@@ -429,7 +558,8 @@ const file_plugin_proto_rawDesc = "" +
 	"\aheaders\x18\x04 \x03(\v2%.cromcloud.ActionRequest.HeadersEntryR\aheaders\x12?\n" +
 	"\asecrets\x18\x05 \x03(\v2%.cromcloud.ActionRequest.SecretsEntryR\asecrets\x12!\n" +
 	"\fdeveloper_id\x18\x06 \x01(\tR\vdeveloperId\x12L\n" +
-	"\fquery_params\x18\a \x03(\v2).cromcloud.ActionRequest.QueryParamsEntryR\vqueryParams\x1a:\n" +
+	"\fquery_params\x18\a \x03(\v2).cromcloud.ActionRequest.QueryParamsEntryR\vqueryParams\x12d\n" +
+	"\x14permissions_metadata\x18\b \x03(\v21.cromcloud.ActionRequest.PermissionsMetadataEntryR\x13permissionsMetadata\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
@@ -437,6 +567,9 @@ const file_plugin_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10QueryParamsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aF\n" +
+	"\x18PermissionsMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"j\n" +
 	"\x0eActionResponse\x12\x1f\n" +
@@ -446,12 +579,22 @@ const file_plugin_proto_rawDesc = "" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"D\n" +
 	"\x0eHealthResponse\x12\x18\n" +
 	"\ahealthy\x18\x01 \x01(\bR\ahealthy\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xc4\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"B\n" +
+	"\tUIRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
+	"\fdeveloper_id\x18\x02 \x01(\tR\vdeveloperId\"j\n" +
+	"\n" +
+	"UIResponse\x12!\n" +
+	"\fcontent_type\x18\x01 \x01(\tR\vcontentType\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\x12\x1f\n" +
+	"\vstatus_code\x18\x03 \x01(\x05R\n" +
+	"statusCode2\xfa\x01\n" +
 	"\n" +
 	"CromPlugin\x124\n" +
 	"\vGetManifest\x12\x10.cromcloud.Empty\x1a\x13.cromcloud.Manifest\x12:\n" +
 	"\vHealthCheck\x12\x10.cromcloud.Empty\x1a\x19.cromcloud.HealthResponse\x12D\n" +
-	"\rExecuteAction\x12\x18.cromcloud.ActionRequest\x1a\x19.cromcloud.ActionResponseB'Z%github.com/crom/crom-cloud/core/protob\x06proto3"
+	"\rExecuteAction\x12\x18.cromcloud.ActionRequest\x1a\x19.cromcloud.ActionResponse\x124\n" +
+	"\x05GetUI\x12\x14.cromcloud.UIRequest\x1a\x15.cromcloud.UIResponseB'Z%github.com/crom/crom-cloud/core/protob\x06proto3"
 
 var (
 	file_plugin_proto_rawDescOnce sync.Once
@@ -465,7 +608,7 @@ func file_plugin_proto_rawDescGZIP() []byte {
 	return file_plugin_proto_rawDescData
 }
 
-var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_plugin_proto_goTypes = []any{
 	(*Empty)(nil),          // 0: cromcloud.Empty
 	(*Manifest)(nil),       // 1: cromcloud.Manifest
@@ -473,26 +616,32 @@ var file_plugin_proto_goTypes = []any{
 	(*ActionRequest)(nil),  // 3: cromcloud.ActionRequest
 	(*ActionResponse)(nil), // 4: cromcloud.ActionResponse
 	(*HealthResponse)(nil), // 5: cromcloud.HealthResponse
-	nil,                    // 6: cromcloud.ActionRequest.HeadersEntry
-	nil,                    // 7: cromcloud.ActionRequest.SecretsEntry
-	nil,                    // 8: cromcloud.ActionRequest.QueryParamsEntry
+	(*UIRequest)(nil),      // 6: cromcloud.UIRequest
+	(*UIResponse)(nil),     // 7: cromcloud.UIResponse
+	nil,                    // 8: cromcloud.ActionRequest.HeadersEntry
+	nil,                    // 9: cromcloud.ActionRequest.SecretsEntry
+	nil,                    // 10: cromcloud.ActionRequest.QueryParamsEntry
+	nil,                    // 11: cromcloud.ActionRequest.PermissionsMetadataEntry
 }
 var file_plugin_proto_depIdxs = []int32{
-	2, // 0: cromcloud.Manifest.routes:type_name -> cromcloud.RouteInfo
-	6, // 1: cromcloud.ActionRequest.headers:type_name -> cromcloud.ActionRequest.HeadersEntry
-	7, // 2: cromcloud.ActionRequest.secrets:type_name -> cromcloud.ActionRequest.SecretsEntry
-	8, // 3: cromcloud.ActionRequest.query_params:type_name -> cromcloud.ActionRequest.QueryParamsEntry
-	0, // 4: cromcloud.CromPlugin.GetManifest:input_type -> cromcloud.Empty
-	0, // 5: cromcloud.CromPlugin.HealthCheck:input_type -> cromcloud.Empty
-	3, // 6: cromcloud.CromPlugin.ExecuteAction:input_type -> cromcloud.ActionRequest
-	1, // 7: cromcloud.CromPlugin.GetManifest:output_type -> cromcloud.Manifest
-	5, // 8: cromcloud.CromPlugin.HealthCheck:output_type -> cromcloud.HealthResponse
-	4, // 9: cromcloud.CromPlugin.ExecuteAction:output_type -> cromcloud.ActionResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	2,  // 0: cromcloud.Manifest.routes:type_name -> cromcloud.RouteInfo
+	8,  // 1: cromcloud.ActionRequest.headers:type_name -> cromcloud.ActionRequest.HeadersEntry
+	9,  // 2: cromcloud.ActionRequest.secrets:type_name -> cromcloud.ActionRequest.SecretsEntry
+	10, // 3: cromcloud.ActionRequest.query_params:type_name -> cromcloud.ActionRequest.QueryParamsEntry
+	11, // 4: cromcloud.ActionRequest.permissions_metadata:type_name -> cromcloud.ActionRequest.PermissionsMetadataEntry
+	0,  // 5: cromcloud.CromPlugin.GetManifest:input_type -> cromcloud.Empty
+	0,  // 6: cromcloud.CromPlugin.HealthCheck:input_type -> cromcloud.Empty
+	3,  // 7: cromcloud.CromPlugin.ExecuteAction:input_type -> cromcloud.ActionRequest
+	6,  // 8: cromcloud.CromPlugin.GetUI:input_type -> cromcloud.UIRequest
+	1,  // 9: cromcloud.CromPlugin.GetManifest:output_type -> cromcloud.Manifest
+	5,  // 10: cromcloud.CromPlugin.HealthCheck:output_type -> cromcloud.HealthResponse
+	4,  // 11: cromcloud.CromPlugin.ExecuteAction:output_type -> cromcloud.ActionResponse
+	7,  // 12: cromcloud.CromPlugin.GetUI:output_type -> cromcloud.UIResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_plugin_proto_init() }
@@ -506,7 +655,7 @@ func file_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_plugin_proto_rawDesc), len(file_plugin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

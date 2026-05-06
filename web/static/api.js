@@ -17,9 +17,12 @@ const API = {
       return this._cache[cacheKey].data;
     }
 
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    };
     if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-    const fetchOpts = { method, headers };
+    const fetchOpts = { method, headers, cache: 'no-store' };
     if (body) fetchOpts.body = JSON.stringify(body);
 
     let lastErr;

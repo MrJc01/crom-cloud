@@ -3,6 +3,7 @@ go 1.25.0
 use (
 	./core
 	./plugins/echo
+	./plugins/easy-crud
 	./plugins/cloudflare-dns
 	./plugins/cloudflare-r2
 	./plugins/supabase-admin

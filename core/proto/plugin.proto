@@ -14,6 +14,9 @@ service CromPlugin {
 
   // Executa uma ação do plugin.
   rpc ExecuteAction(ActionRequest) returns (ActionResponse);
+
+  // Retorna os dados/assets de UI do plugin (Schema JSON ou Iframe HTML)
+  rpc GetUI(UIRequest) returns (UIResponse);
 }
 
 message Empty {}
@@ -25,6 +28,7 @@ message Manifest {
   string description = 4;
   string icon = 5;
   repeated RouteInfo routes = 6;
+  string ui_type = 7; // "schema", "iframe", "none"
 }
 
 message RouteInfo {
@@ -41,6 +45,7 @@ message ActionRequest {
   map<string, string> secrets = 5;      // Tokens injetados pelo Core (do cofre)
   string developer_id = 6;             // ID do desenvolvedor autenticado
   map<string, string> query_params = 7; // Query string parameters
+  map<string, string> permissions_metadata = 8; // Restrições granulares da API Key (ex: resource_id)
 }
 
 message ActionResponse {
@@ -52,4 +57,15 @@ message ActionResponse {
 message HealthResponse {
   bool healthy = 1;
   string message = 2;
+}
+
+message UIRequest {
+  string path = 1;         // Caminho solicitado na UI (ex: "/", "/schema.json", "/assets/app.js")
+  string developer_id = 2; // Quem está requisitando
+}
+
+message UIResponse {
+  string content_type = 1; // ex: "application/json", "text/html"
+  bytes content = 2;
+  int32 status_code = 3;   // ex: 200, 404
 }

@@ -15,6 +15,7 @@ type PluginManifest struct {
 	Description     string          `json:"description"`
 	Icon            string          `json:"icon"`
 	Status          string          `json:"status"`
+	UIType          string          `json:"ui_type"` // "schema", "iframe", "none"
 	Runtime         RuntimeConfig   `json:"runtime"`
 	Billing         BillingConfig   `json:"billing"`
 	RequiredSecrets []SecretSpec    `json:"required_secrets"`
